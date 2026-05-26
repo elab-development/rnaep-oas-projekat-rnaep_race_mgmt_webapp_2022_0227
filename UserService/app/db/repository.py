@@ -1,14 +1,31 @@
+from sqlalchemy.orm import selectinload
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.schema import ParticipantCreate, OrganiserCreate, AdminCreate
 from app.db.models import User, Participant, Organiser, Admin
 
 async def get_user_by_email(db: AsyncSession, email: str) -> User | None:
-    result = await db.execute(select(User).where(User.email == email))
+    result = await db.execute(
+        select(User)
+        .options(
+            selectinload(User.admin),
+            selectinload(User.participant),
+            selectinload(User.organiser)
+        )
+    .where(User.email == email)
+    )
     return result.scalar_one_or_none()
 
 async def get_user_by_id(db: AsyncSession, user_id: int) -> User | None:
-    result = await db.execute(select(User).where(User.id == user_id))
+    result = await db.execute(
+        select(User)
+        .options(
+            selectinload(User.admin),
+            selectinload(User.participant),
+            selectinload(User.organiser)
+        )
+    .where(User.id == user_id)
+    )
     return result.scalar_one_or_none()
 
 async def create_participant(db: AsyncSession, data: ParticipantCreate, password_hash: str) -> User:
@@ -58,23 +75,16 @@ async def create_organiser(db: AsyncSession, data: OrganiserCreate, password_has
         await db.rollback()
         raise e
     
-async def create_admin(db: AsyncSession, data: AdminCreate, password_hash: str) -> User:
+async def create_admin(db: AsyncSession, user_id: int, admin_level: int = 1) -> User:
     try:
-        user_model = User(
-            email=data.email,
-            password_hash=password_hash,
-            first_name=data.first_name,
-            last_name=data.last_name
-        )
         admin_model = Admin(
-            admin_level=data.admin_level
+            id=user_id,
+            admin_level=admin_level
         )
-        user_model.admin = admin_model
-        
-        db.add(user_model)
+        db.add(admin_model)
         await db.commit()
-        await db.refresh(user_model)
-        return user_model
+        user = await get_user_by_id(db, user_id)
+        return user
     except Exception as e:
         await db.rollback()
         raise e
