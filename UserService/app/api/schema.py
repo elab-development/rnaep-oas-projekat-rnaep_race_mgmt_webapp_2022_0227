@@ -56,3 +56,10 @@ class UserResponse(UserBase):
     admin: AdminDetails | None = Field(default=None)
 
     model_config = ConfigDict(from_attributes=True)
+
+
+#Token response model
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str 
