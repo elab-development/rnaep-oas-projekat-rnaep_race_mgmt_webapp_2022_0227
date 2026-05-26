@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, Depends
-from UserService.app.api.router import router as auth_router
+from app.api.router import router as auth_router
 
 app = FastAPI()
 

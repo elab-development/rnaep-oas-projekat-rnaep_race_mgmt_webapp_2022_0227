@@ -57,6 +57,9 @@ class UserResponse(UserBase):
 
     model_config = ConfigDict(from_attributes=True)
 
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
 
 #Token response model
 

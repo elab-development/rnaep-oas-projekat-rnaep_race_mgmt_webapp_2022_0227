@@ -2,7 +2,7 @@ from datetime import datetime, date
 from sqlalchemy import DateTime, Integer, String, Boolean, ForeignKey, Date, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import Enum as SAEnum
-from db import Base
+from app.db.db import Base
 from app.enum import GenderEnum, TshirtSizeEnum
 
 class User(Base):
