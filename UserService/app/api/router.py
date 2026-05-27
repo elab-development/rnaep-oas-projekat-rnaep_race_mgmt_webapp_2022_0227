@@ -8,7 +8,7 @@ from app.config import settings
 from app.core.auth import verify_token
 
 #AUTH ROUTES#
-auth_router = APIRouter(prefix="/api/users/auth", tags=["auth"])
+auth_router = APIRouter(prefix="/api/users/auth", tags=["Auth"])
 
 @auth_router.post("/register/participant", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register_participant(data: ParticipantCreate, db: AsyncSession = Depends(get_db)):
@@ -38,7 +38,7 @@ async def logout(response: Response):
     return {"message": "Logout successful"}
 
 #CLASSIC USER ROUTES#
-user_router = APIRouter(prefix="/api/users", tags=["users"])
+user_router = APIRouter(prefix="/api/users", tags=["Users"])
 @user_router.get("/me")
 async def get_my_profile(request: Request, db: AsyncSession = Depends(get_db)):
     access_token = request.cookies.get("access_token")

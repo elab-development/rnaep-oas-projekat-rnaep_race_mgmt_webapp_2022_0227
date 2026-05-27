@@ -1,29 +1,113 @@
-from pydantic import BaseModel, EmailStr, ConfigDict, Field, HttpUrl
+from pydantic import BaseModel, EmailStr, ConfigDict, Field, HttpUrl, field_validator
 from app.enum import GenderEnum, TshirtSizeEnum
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 
 class UserBase(BaseModel):
-    email: EmailStr = Field(min_length=5, max_length=50)
-    first_name: str = Field(min_length=2, max_length=50)
-    last_name: str = Field(min_length=2, max_length=50)
+    email: EmailStr
+    first_name: str 
+    last_name: str
+
+    @field_validator("first_name", "last_name")
+    @classmethod
+    def validate_name(cls, value):
+        value = value.strip()
+        if len(value) < 2 or len(value) > 50:
+            raise ValueError("Name must be between 2 and 50 characters")
+        return value
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, value):
+        value = value.strip()
+        if len(value) > 50:
+            raise ValueError("Email must be less than 50 characters")
+        return value
 
 class ParticipantCreate(UserBase):
-    password: str = Field(min_length=8, max_length=128)
+    password: str
     date_of_birth: date
     gender: GenderEnum
     tshirt_size: TshirtSizeEnum | None = None
-    emergency_contact: str = Field(min_length=5, max_length=100)
+    emergency_contact: str
+    
+    @field_validator('password')
+    @classmethod
+    def validate_password(cls, value):
+        if len(value) < 8 or len(value) > 24:
+            raise ValueError("Password must be between 8 and 24 characters")
+        return value
+    @field_validator('date_of_birth')
+    @classmethod
+    def validate_date_of_birth(cls, value):
+        today = datetime.now(UTC).date()
+        if value > today:
+            raise ValueError("Date of birth cannot be in the future")
+        if value < date(1900, 1, 1):
+            raise ValueError("Date of birth cannot be before January 1, 1900")
+        age = today.year - value.year - ((today.month, today.day) < (value.month, value.day))
+        if age < 18:
+            raise ValueError("User must be at least 18 years old")
+        return value
+    @field_validator('emergency_contact')
+    @classmethod
+    def validate_emergency_contact(cls, value):
+        value = value.strip()
+        if len(value) < 10 or len(value) > 20:
+            raise ValueError("Emergency contact must be between 10 and 20 characters")
+        return value
 
 class OrganiserCreate(UserBase):
-    password: str = Field(min_length=8, max_length=128)
-    organization_name: str = Field(min_length=2, max_length=100)
-    website: str | None = Field(default=None, pattern=r"^(https?://.*)?$")
-    description: str = Field(min_length=10, max_length=200)
+    password: str 
+    organization_name: str 
+    website: str | None 
+    description: str 
+
+    @field_validator('password')
+    @classmethod
+    def validate_password(cls, value):
+        if len(value) < 8 or len(value) > 24:
+            raise ValueError("Password must be between 8 and 24 characters")
+        return value
+    @field_validator('organization_name')
+    @classmethod
+    def validate_organization_name(cls, value):
+        if len(value) < 2 or len(value) > 100:
+            raise ValueError("Organization name must be between 2 and 100 characters")
+        return value
+    @field_validator('description')
+    @classmethod
+    def validate_description(cls, value):
+        if len(value) < 10 or len(value) > 1000:
+            raise ValueError("Description must be between 10 and 1000 characters")
+        return value
+    @field_validator('website')
+    @classmethod
+    def validate_website(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        value = value.strip()
+        if value == "":
+            return None
+        if not value.startswith(("http://", "https://")):
+            raise ValueError("Website URL must start with http:// or https://")
+        if len(value) > 200:
+            raise ValueError("Website URL must be less than 200 characters")
+        return value
 
 class AdminCreate(UserBase):
-    password: str = Field(min_length=8, max_length=128)
-    admin_level: int = Field(default=1, ge=1, le=5)
-
+    password: str
+    admin_level: int
+    @field_validator('password')
+    @classmethod
+    def validate_password(cls, value):
+        if len(value) < 8 or len(value) > 24:
+            raise ValueError("Password must be between 8 and 24 characters")
+        return value 
+    @field_validator('admin_level')
+    @classmethod
+    def validate_admin_level(cls, value):
+        if value < 1 or value > 5:
+            raise ValueError("Admin level must be between 1 and 5")
+        return value
 
 class ParticipantDetails(BaseModel):
     date_of_birth: date
@@ -35,7 +119,7 @@ class ParticipantDetails(BaseModel):
 
 class OrganiserDetails(BaseModel):
     organization_name: str
-    website: str | None = Field(default=None, pattern=r"^(https?://.*)?$")
+    website: str | None 
     description: str
     is_verified: bool
 
