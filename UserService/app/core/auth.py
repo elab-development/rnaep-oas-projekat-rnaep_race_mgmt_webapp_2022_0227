@@ -1,11 +1,14 @@
 from datetime import UTC, datetime, timedelta
+from fastapi.params import Cookie
 import jwt 
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import APIKeyCookie, OAuth2PasswordBearer
 from pwdlib import PasswordHash
 from app.config import settings
 
 password_hash = PasswordHash.recommended()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/users/auth/login")
+
+cookie_scheme = APIKeyCookie(name="access_token", auto_error=False)
 
 def hash_password(password: str) -> str:
     return password_hash.hash(password)
