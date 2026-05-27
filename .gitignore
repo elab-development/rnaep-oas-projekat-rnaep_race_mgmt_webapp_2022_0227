@@ -48,3 +48,9 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+
+# Alembic
+alembic.ini
+
+# Migrations (verzije se ne commitaju)
+migrations/versions/
