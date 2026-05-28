@@ -43,11 +43,19 @@ async def create_participant(db: AsyncSession, data: ParticipantCreate, password
             emergency_contact=data.emergency_contact
         )
         user_model.participant = participant_model
-        
+
         db.add(user_model)
         await db.commit()
-        await db.refresh(user_model)
-        return user_model
+        result = await db.execute(
+            select(User)
+            .options(
+                selectinload(User.participant),
+                selectinload(User.organiser),
+                selectinload(User.admin)
+            )
+            .where(User.id == user_model.id)
+        )
+        return result.scalar_one()
     except Exception as e:
         await db.rollback()
         raise e
@@ -69,8 +77,16 @@ async def create_organiser(db: AsyncSession, data: OrganiserCreate, password_has
         
         db.add(user_model)
         await db.commit()
-        await db.refresh(user_model)
-        return user_model
+        result = await db.execute(
+            select(User)
+            .options(
+                selectinload(User.participant),
+                selectinload(User.organiser),
+                selectinload(User.admin)
+            )
+            .where(User.id == user_model.id)
+        )
+        return result.scalar_one()
     except Exception as e:
         await db.rollback()
         raise e
@@ -83,8 +99,16 @@ async def create_admin(db: AsyncSession, user_id: int, admin_level: int = 1) -> 
         )
         db.add(admin_model)
         await db.commit()
-        user = await get_user_by_id(db, user_id)
-        return user
+        result = await db.execute(
+            select(User)
+            .options(
+                selectinload(User.participant),
+                selectinload(User.organiser),
+                selectinload(User.admin)
+            )
+            .where(User.id == user_id)
+        )
+        return result.scalar_one()
     except Exception as e:
         await db.rollback()
         raise e

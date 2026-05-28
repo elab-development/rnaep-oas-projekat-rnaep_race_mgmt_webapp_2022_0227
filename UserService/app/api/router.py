@@ -25,7 +25,7 @@ async def login(data: LoginRequest, response: Response ,db: AsyncSession = Depen
         key="access_token",
         value=result,
         httponly=True,
-        secure=True,
+        secure=False,
         samesite="lax",
         max_age=60 * 60 * 24 * settings.access_token_expire_days
     )
