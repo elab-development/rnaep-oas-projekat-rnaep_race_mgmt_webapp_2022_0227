@@ -32,6 +32,7 @@ async def create_race(db: AsyncSession, data: RaceCreate, organiser_id: int) -> 
             deadline=data.deadline,
             location=data.location,
             max_participants=data.max_participants,
+            status=data.status,
             price=data.price,
             tracks=track_models
         )

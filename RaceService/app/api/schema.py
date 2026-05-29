@@ -1,5 +1,5 @@
 from typing import List
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator, model_validator
 from app.enum import RaceStatusEnum, TerrainTypeEnum, PaymentStatusEnum, DifficultyScoreEnum
 from datetime import datetime, timezone
 
@@ -33,7 +33,7 @@ class RaceBase(BaseModel):
     max_participants: int
     status: RaceStatusEnum
     price: float
-
+    status: RaceStatusEnum = RaceStatusEnum.UPCOMING
     @field_validator("name")
     @classmethod
     def name_not_empty(cls, v):
@@ -63,6 +63,9 @@ class RaceBase(BaseModel):
             raise ValueError("Race date must be in the future")
         return self
 
+    @field_serializer("date_time", "deadline")
+    def format_datetime(self, v: datetime) -> str:
+        return v.strftime("%Y/%d/%m %H:%M")
 
 class RegistrationBase(BaseModel):
     payment_status: PaymentStatusEnum
@@ -102,6 +105,10 @@ class RaceResponse(RaceBase):
     tracks: List[TrackResponse] = Field(default_factory=list)
     model_config = ConfigDict(from_attributes=True)
 
+    @field_serializer("created_at")
+    def format_created_at(self, v: datetime) -> str:
+        return v.strftime("%Y/%d/%m %H:%M")
+
 class RegistrationResponse(RegistrationBase):
     id: int
     race_id: int
@@ -120,7 +127,6 @@ class TrackCreate(TrackBase):
 
 class RaceCreate(RaceBase):
     tracks: List[TrackCreate]
-
     @field_validator("tracks")
     @classmethod
     def must_have_at_least_one_track(cls, v):
