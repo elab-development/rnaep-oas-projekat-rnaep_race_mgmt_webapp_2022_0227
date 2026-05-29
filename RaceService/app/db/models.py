@@ -28,7 +28,7 @@ class Track(Base):
     __tablename__ = "tracks"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    race_id: Mapped[int] = mapped_column(Integer, ForeignKey("races.id"), ondelete="CASCADE")
+    race_id: Mapped[int] = mapped_column(Integer, ForeignKey("races.id", ondelete="CASCADE"))
     length_km: Mapped[Decimal] = mapped_column(Numeric(6, 2))
     elevation_gain: Mapped[int] = mapped_column(Integer)
     terrain_type: Mapped[TerrainTypeEnum] = mapped_column(SAEnum(TerrainTypeEnum, name="terrain_type_enum"))
@@ -42,7 +42,7 @@ class Registration(Base):
     __tablename__ = "registrations"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    race_id: Mapped[int] = mapped_column(Integer, ForeignKey("races.id"), ondelete="CASCADE")
+    race_id: Mapped[int] = mapped_column(Integer, ForeignKey("races.id", ondelete="CASCADE"))
     participant_id: Mapped[int] = mapped_column(Integer) 
     registration_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("NOW()"))
     payment_status: Mapped[PaymentStatusEnum] = mapped_column(SAEnum(PaymentStatusEnum, name="payment_status_enum"))
@@ -66,8 +66,8 @@ class Obstacle(Base):
 class TrackObstacle(Base):
     __tablename__ = "track_obstacles"
 
-    track_id: Mapped[int] = mapped_column(Integer, ForeignKey("tracks.id"), primary_key=True, ondelete="CASCADE")
-    obstacle_id: Mapped[int] = mapped_column(Integer, ForeignKey("obstacles.id"), primary_key=True, ondelete="RESTRICT")
+    track_id: Mapped[int] = mapped_column(Integer, ForeignKey("tracks.id", ondelete="CASCADE"), primary_key=True)
+    obstacle_id: Mapped[int] = mapped_column(Integer, ForeignKey("obstacles.id", ondelete="RESTRICT"), primary_key=True)
     order: Mapped[int] = mapped_column(Integer)
     distance_from_start_km: Mapped[Decimal] = mapped_column(Numeric(6, 2))
 
