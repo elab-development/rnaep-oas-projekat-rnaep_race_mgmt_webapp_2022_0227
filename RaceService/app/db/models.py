@@ -1,6 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
-from sqlalchemy import DateTime, Integer, String, Boolean, ForeignKey, text, Numeric
+from sqlalchemy import DateTime, Integer, String, Boolean, ForeignKey, UniqueConstraint, text, Numeric
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import Enum as SAEnum
 from app.db.db import Base
@@ -37,12 +37,17 @@ class Track(Base):
     #relationships
     trackobstacles: Mapped[list["TrackObstacle"]] = relationship("TrackObstacle", back_populates="track")
     race: Mapped["Race"] = relationship("Race", back_populates="tracks")
+    registrations: Mapped[list["Registration"]] = relationship("Registration", back_populates="track")
 
 class Registration(Base):
     __tablename__ = "registrations"
 
+    __table_args__ = (
+    UniqueConstraint("race_id", "participant_id", "track_id", name="uq_race_participant_track"),)
+
     id: Mapped[int] = mapped_column(primary_key=True)
     race_id: Mapped[int] = mapped_column(Integer, ForeignKey("races.id", ondelete="CASCADE"))
+    track_id: Mapped[int] = mapped_column(Integer, ForeignKey("tracks.id", ondelete="CASCADE"))
     participant_id: Mapped[int] = mapped_column(Integer) 
     registration_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("NOW()"))
     payment_status: Mapped[PaymentStatusEnum] = mapped_column(SAEnum(PaymentStatusEnum, name="payment_status_enum"))
@@ -51,6 +56,7 @@ class Registration(Base):
 
     #relationships
     race: Mapped["Race"] = relationship("Race", back_populates="registrations")
+    track: Mapped["Track"] = relationship("Track", back_populates="registrations")
 
 class Obstacle(Base):
     __tablename__ = "obstacles"
