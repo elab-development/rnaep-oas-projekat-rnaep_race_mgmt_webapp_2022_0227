@@ -15,3 +15,11 @@ async def get_race(race_id: int, db: AsyncSession = Depends(get_db)):
 @race_router.post("/", response_model=RaceResponse, status_code=status.HTTP_201_CREATED)
 async def create_race(data: RaceCreate, organiser_id: int, db: AsyncSession = Depends(get_db)):
     return await service.create_race(db, data, organiser_id)
+
+@race_router.patch("/{race_id}", response_model=RaceResponse, status_code=status.HTTP_200_OK)
+async def update_race(race_id: int, data: RaceCreate, organiser_id: int, db: AsyncSession = Depends(get_db)):
+    return await service.patch_race(db, race_id, organiser_id, data)
+
+@race_router.delete("/{race_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_race(race_id: int, organiser_id: int, db: AsyncSession = Depends(get_db)):
+    await service.delete_race(db, race_id, organiser_id)
