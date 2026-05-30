@@ -151,6 +151,9 @@ class CreateObstacle(ObstacleBase):
             raise ValueError("Order must be greater than 0")
         return v
 
+class RegistrationCreate(RegistrationBase):
+    pass
+
 class RaceUpdate(BaseModel):
     name: str | None = None
     date_time: datetime | None = None
