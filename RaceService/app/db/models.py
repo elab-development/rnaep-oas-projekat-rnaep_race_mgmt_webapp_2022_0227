@@ -62,6 +62,7 @@ class Obstacle(Base):
     __tablename__ = "obstacles"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    organiser_id: Mapped[int] = mapped_column(Integer)
     name: Mapped[str] = mapped_column(String(100))
     description: Mapped[str | None] = mapped_column(String(500))
     difficulty_score: Mapped[DifficultyScoreEnum] = mapped_column(SAEnum(DifficultyScoreEnum, name="difficulty_score_enum"))
