@@ -154,6 +154,9 @@ class CreateObstacle(ObstacleBase):
 class RegistrationCreate(RegistrationBase):
     pass
 
+class CreateTrack(TrackBase):
+    pass
+
 class RaceUpdate(BaseModel):
     name: str | None = None
     date_time: datetime | None = None
