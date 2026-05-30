@@ -53,15 +53,7 @@ class RaceBase(BaseModel):
         if v < 0:
             raise ValueError("Price must be a positive number")
         return v
-
-    @model_validator(mode="after")
-    def deadline_before_race(self):
-        if self.deadline >= self.date_time:
-            raise ValueError("Deadline must be before the race date")
-        if self.date_time <= datetime.now(timezone.utc):
-            raise ValueError("Race date must be in the future")
-        return self
-
+    
     @field_serializer("date_time", "deadline")
     def format_datetime(self, v: datetime) -> str:
         return v.strftime("%Y/%d/%m %H:%M")
@@ -132,6 +124,15 @@ class RaceCreate(RaceBase):
         if len(v) == 0:
             raise ValueError("Race must have at least one track")
         return v
+    
+    @model_validator(mode="after")
+    def deadline_before_race(self):
+        if self.deadline >= self.date_time:
+            raise ValueError("Deadline must be before the race date")
+        if self.date_time <= datetime.now(timezone.utc):
+            raise ValueError("Race date must be in the future")
+        return self
+
 
 class CreateObstacle(ObstacleBase):
     order: int
@@ -184,61 +185,13 @@ class RaceUpdate(BaseModel):
     status: RaceStatusEnum | None = None
     price: float | None = None
 
-    @field_validator("name")
-    @classmethod
-    def name_not_empty(cls, v):
-        if v is not None and not v.strip():
-            raise ValueError("Name cannot be empty")
-        return v.strip() if v else v
-
-    @field_validator("price")
-    @classmethod
-    def price_positive(cls, v):
-        if v is not None and v < 0:
-            raise ValueError("Price must be a positive number")
-        return v
-
 class TrackUpdate(BaseModel):
     length_km: float | None = None
     elevation_gain: int | None = None
     terrain_type: TerrainTypeEnum | None = None
     description: str | None = None
 
-    @field_validator("length_km")
-    @classmethod
-    def length_positive(cls, v):
-        if v is not None and v <= 0:
-            raise ValueError("Length must be greater than 0")
-        return v
-
-    @field_validator("elevation_gain")
-    @classmethod
-    def elevation_positive(cls, v):
-        if v is not None and v < 0:
-            raise ValueError("Elevation gain must be a positive number")
-        return v
-    
-    @field_validator("terrain_type")
-    @classmethod
-    def terrain_type_valid(cls, v):
-        if v is not None and v not in TerrainTypeEnum.__members__.values():
-            raise ValueError("Invalid terrain type")
-        return v
-
 class ObstacleUpdate(BaseModel):
     name: str | None = None
     description: str | None = None
     difficulty_score: DifficultyScoreEnum | None = None
-
-    @field_validator("name")
-    @classmethod
-    def name_not_empty(cls, v):
-        if v is not None and not v.strip():
-            raise ValueError("Obstacle name cannot be empty")
-        return v.strip() if v else v
-    @field_validator("difficulty_score")
-    @classmethod
-    def difficulty_score_valid(cls, v):
-        if v is not None and v not in DifficultyScoreEnum.__members__.values():
-            raise ValueError("Invalid difficulty score")
-        return v

@@ -1,7 +1,7 @@
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.enum import PaymentStatusEnum
-from app.api.schema import CreateRegistration
+from app.api.schema import RegistrationCreate
 from app.db.models import  Registration
 
 #Registration repository functions
@@ -29,7 +29,7 @@ async def get_registrations_by_participant_id(db: AsyncSession, participant_id: 
     )
     return result.scalars().all()
 
-async def create_registration(db: AsyncSession, participant_id: int, race_id: int, track_id: int, data: CreateRegistration) -> Registration | None:
+async def create_registration(db: AsyncSession, participant_id: int, race_id: int, track_id: int, data: RegistrationCreate) -> Registration | None:
     try:
         registration_model = Registration(
             participant_id=participant_id,
