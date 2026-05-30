@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends, Depends, status
 from app.db.db import get_db
 from app import service
-from app.api.schema import RaceCreate, RaceResponse, TrackCreate, TrackResponse, TrackUpdate
+from app.api.schema import CreateObstacle, ObstacleResponse, ObstacleUpdate, RaceCreate, RaceResponse, TrackCreate, TrackObstacleCreate, TrackResponse, TrackUpdate
 
 
 
@@ -42,3 +42,25 @@ async def delete_track(track_id: int, organiser_id: int, db: AsyncSession = Depe
 @track_router.post("/add", response_model=TrackResponse, status_code=status.HTTP_201_CREATED)
 async def add_track_to_race(race_id: int, data: TrackCreate, organiser_id: int, db: AsyncSession = Depends(get_db)):
     return await service.add_track_to_race(db, race_id, organiser_id, data)
+
+obstacle_router = APIRouter(prefix="/api/obstacle", tags=["Obstacles"])
+
+@obstacle_router.get("/{obstacle_id}", response_model=ObstacleResponse, status_code=status.HTTP_200_OK)
+async def get_obstacle(obstacle_id: int, db: AsyncSession = Depends(get_db)):
+    return await service.get_obstacle_by_id(db, obstacle_id)
+
+@obstacle_router.post("/", response_model=ObstacleResponse, status_code=status.HTTP_201_CREATED)
+async def create_obstacle(data: CreateObstacle, organiser_id: int, db: AsyncSession = Depends(get_db)):
+    return await service.add_obstacle(db, data, organiser_id)   
+
+@obstacle_router.patch("/{obstacle_id}", response_model=ObstacleResponse, status_code=status.HTTP_200_OK)
+async def update_obstacle(obstacle_id: int, data: ObstacleUpdate, organiser_id: int, db: AsyncSession = Depends(get_db)):
+    return await service.patch_obstacle(db, obstacle_id, data, organiser_id)
+
+@obstacle_router.post("/map", status_code=status.HTTP_200_OK)
+async def map_obstacle_to_track(track_id: int, obstacle_id: int, data: TrackObstacleCreate, organiser_id: int, db: AsyncSession = Depends(get_db)):
+    return await service.map_obstacle_to_track(db, track_id, obstacle_id, data, organiser_id)
+
+@obstacle_router.post("/unmap", status_code=status.HTTP_200_OK)
+async def unmap_obstacle_from_track(track_id: int, obstacle_id: int, organiser_id: int, db: AsyncSession = Depends(get_db)):
+    return await service.unmap_obstacle_from_track(db, track_id, obstacle_id, organiser_id)

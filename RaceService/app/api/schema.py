@@ -67,7 +67,7 @@ class RaceBase(BaseModel):
         return v.strftime("%Y/%d/%m %H:%M")
 
 class RegistrationBase(BaseModel):
-    payment_status: PaymentStatusEnum
+    payment_status: PaymentStatusEnum = PaymentStatusEnum.PENDING
     bib_number: str
     track_id: int
     @field_validator("bib_number")
@@ -156,6 +156,24 @@ class RegistrationCreate(RegistrationBase):
 
 class CreateTrack(TrackBase):
     pass
+
+class TrackObstacleCreate(BaseModel):
+    order: int
+    distance_from_start_km: float
+    
+    @field_validator("distance_from_start_km")
+    @classmethod
+    def distance_must_be_positive(cls, v):
+        if v < 0:
+            raise ValueError("Distance from start must be a positive number")
+        return v
+    
+    @field_validator("order")
+    @classmethod
+    def order_must_be_positive(cls, v):
+        if v <= 0:
+            raise ValueError("Order must be greater than 0")
+        return v
 
 class RaceUpdate(BaseModel):
     name: str | None = None

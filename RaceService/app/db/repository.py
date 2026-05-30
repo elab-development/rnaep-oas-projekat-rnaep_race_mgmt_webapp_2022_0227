@@ -142,12 +142,13 @@ async def get_obstacle_by_id(db: AsyncSession, obstacle_id: int) -> Obstacle | N
     )
     return result.scalar_one_or_none()
 
-async def add_obstacle(db: AsyncSession, obstacle_data: CreateObstacle) -> Obstacle | None:
+async def add_obstacle(db: AsyncSession, obstacle_data: CreateObstacle, organiser_id: int) -> Obstacle | None:
     try:
         obstacle_model = Obstacle(
             name=obstacle_data.name,
             description=obstacle_data.description,
-            difficulty_score=obstacle_data.difficulty_score
+            difficulty_score=obstacle_data.difficulty_score,
+            organiser_id=organiser_id
         )
         db.add(obstacle_model)
         await db.commit()
