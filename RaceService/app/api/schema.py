@@ -31,7 +31,7 @@ class RaceBase(BaseModel):
     deadline: datetime
     location: str
     max_participants: int
-    status: RaceStatusEnum.UPCOMING
+    status: RaceStatusEnum = RaceStatusEnum.UPCOMING
     price: float
     @field_validator("name")
     @classmethod
@@ -131,6 +131,24 @@ class RaceCreate(RaceBase):
     def must_have_at_least_one_track(cls, v):
         if len(v) == 0:
             raise ValueError("Race must have at least one track")
+        return v
+
+class CreateObstacle(ObstacleBase):
+    order: int
+    distance_from_start_km: float
+    
+    @field_validator("distance_from_start_km")
+    @classmethod
+    def distance_must_be_positive(cls, v):
+        if v < 0:
+            raise ValueError("Distance from start must be a positive number")
+        return v
+    
+    @field_validator("order")
+    @classmethod
+    def order_must_be_positive(cls, v):
+        if v <= 0:
+            raise ValueError("Order must be greater than 0")
         return v
 
 class RaceUpdate(BaseModel):

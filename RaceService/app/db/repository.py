@@ -1,8 +1,8 @@
 from sqlalchemy.orm import selectinload
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.api.schema import RaceCreate, RaceUpdate
-from app.db.models import Race, Track
+from app.api.schema import RaceCreate, CreateObstacle
+from app.db.models import Obstacle, Race, Track, TrackObstacle
 
 
 
@@ -132,3 +132,66 @@ async def add_track_to_race(db: AsyncSession, race_id: int, track_data: dict) ->
     except Exception as e:
         await db.rollback()
         raise e
+
+#Obstacle repository functions
+
+async def get_obstacle_by_id(db: AsyncSession, obstacle_id: int) -> Obstacle | None:
+    result = await db.execute(
+        select(Obstacle).where(Obstacle.id == obstacle_id)
+    )
+    return result.scalar_one_or_none()
+
+async def add_obstacle_to_track(db: AsyncSession, track_id: int, obstacle_data: CreateObstacle) -> Obstacle | None:
+    try:
+        track = await get_track_by_id(db, track_id)
+        if not track:
+            return None
+        obstacle_model = Obstacle(
+            name=obstacle_data.name,
+            description=obstacle_data.description,
+            difficulty_score=obstacle_data.difficulty_score
+        )
+        db.add(obstacle_model)
+        await db.flush()
+        track_obstacle = TrackObstacle(
+            track_id=track_id,
+            obstacle_id=obstacle_model.id,
+            order=obstacle_data.order,
+            distance_from_start_km=obstacle_data.distance_from_start_km
+        )
+        db.add(track_obstacle)
+        await db.commit()
+        await db.refresh(obstacle_model)
+        return obstacle_model
+    except Exception as e:
+        await db.rollback()
+        raise e
+
+async def patch_obstacle(db: AsyncSession, obstacle_id: int, data: dict) -> Obstacle | None:
+    try:
+        obstacle = await get_obstacle_by_id(db, obstacle_id)
+        if not obstacle:
+            return None
+        for key, val in data.items():
+            if val is not None:
+                setattr(obstacle, key, val)
+        await db.commit()
+        await db.refresh(obstacle)
+        return obstacle
+    except Exception as e:
+        await db.rollback()
+        raise e
+
+async def delete_obstacle(db: AsyncSession, obstacle_id: int) -> bool:
+    try:
+        obstacle = await get_obstacle_by_id(db, obstacle_id)
+        if not obstacle:
+            return False
+        await db.delete(obstacle)
+        await db.commit()
+        return True
+    except Exception as e:
+        await db.rollback()
+        raise e
+
+#Registration repository functions
