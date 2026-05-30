@@ -1,8 +1,10 @@
+from typing import List
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends, Depends, status
 from app.db.db import get_db
 from app import service
-from app.api.schema import CreateObstacle, ObstacleResponse, ObstacleUpdate, RaceCreate, RaceResponse, TrackCreate, TrackObstacleCreate, TrackResponse, TrackUpdate
+from app.api.schema import CreateObstacle, ObstacleResponse, ObstacleUpdate, RaceCreate, RaceResponse, RegistrationCreate, RegistrationResponse, TrackCreate, TrackObstacleCreate, TrackResponse, TrackUpdate
 
 
 
@@ -64,3 +66,21 @@ async def map_obstacle_to_track(track_id: int, obstacle_id: int, data: TrackObst
 @obstacle_router.post("/unmap", status_code=status.HTTP_200_OK)
 async def unmap_obstacle_from_track(track_id: int, obstacle_id: int, organiser_id: int, db: AsyncSession = Depends(get_db)):
     return await service.unmap_obstacle_from_track(db, track_id, obstacle_id, organiser_id)
+
+registration_router = APIRouter(prefix="/api/registration", tags=["Registrations"])
+
+@registration_router.get("/{registration_id}", response_model=RegistrationResponse, status_code=status.HTTP_200_OK)
+async def get_registration(registration_id: int, db: AsyncSession = Depends(get_db)):
+    return await service.get_registration_by_id(db, registration_id)  
+
+@registration_router.get("/{participant_id}/participant", response_model=List[RegistrationResponse], status_code=status.HTTP_200_OK)
+async def get_registrations_by_participant_id(participant_id: int, db: AsyncSession = Depends(get_db)):
+    return await service.get_registrations_by_participant_id(db, participant_id)
+
+@registration_router.post("/", response_model=RegistrationResponse, status_code=status.HTTP_201_CREATED)
+async def create_registration(data: RegistrationCreate, db: AsyncSession = Depends(get_db)):
+    return await service.create_registration(db, data)
+
+@registration_router.delete("/{registration_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_registration(registration_id: int, participant_id: int, db: AsyncSession = Depends(get_db)):
+    await service.delete_registration(db, registration_id, participant_id)
