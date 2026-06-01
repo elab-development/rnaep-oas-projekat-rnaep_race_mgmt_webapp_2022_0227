@@ -1,0 +1,68 @@
+services:
+  user-service:
+    build: ./UserService
+    container_name: user_service
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - USER_DATABASE_URL=${USER_DATABASE_URL}
+    depends_on:
+      user-db:
+        condition: service_healthy
+
+  user-db:
+    image: postgres:16
+    container_name: user_db
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${USER_DATABASE_USERNAME}
+      - POSTGRES_PASSWORD=${USER_DATABASE_PASSWORD}
+      - POSTGRES_DB=${USER_DATABASE_NAME}
+    ports:
+      - "5433:5432"
+    volumes:
+      - user_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${USER_DATABASE_USERNAME} -d ${USER_DATABASE_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+
+  race-service:
+    build: ./RaceService
+    container_name: race_service
+    ports:
+      - "8001:8001"
+    env_file:
+      - .env
+    environment:
+      - RACE_DATABASE_URL=${RACE_DATABASE_URL}
+    depends_on:
+      race-db:
+        condition: service_healthy
+  race-db:
+    image: postgres:16
+    container_name: race_db
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${RACE_DATABASE_USERNAME}
+      - POSTGRES_PASSWORD=${RACE_DATABASE_PASSWORD}
+      - POSTGRES_DB=${RACE_DATABASE_NAME}
+    ports:
+      - "5434:5432"
+    volumes:
+      - race_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${RACE_DATABASE_USERNAME} -d ${RACE_DATABASE_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  user_db_data:
+  race_db_data:
