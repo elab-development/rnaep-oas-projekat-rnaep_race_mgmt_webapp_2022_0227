@@ -1,28 +1,7 @@
 from typing import List
 from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator, model_validator
-from app.enum import RaceStatusEnum, TerrainTypeEnum, PaymentStatusEnum, DifficultyScoreEnum
+from app.enum import RaceStatusEnum, PaymentStatusEnum
 from datetime import datetime, timezone
-
-
-class TrackBase(BaseModel):
-    length_km: float
-    elevation_gain: int
-    terrain_type: TerrainTypeEnum
-    description: str | None = None
-
-    @field_validator("length_km")
-    @classmethod
-    def length_must_be_positive(cls, v):
-        if v <= 0:
-            raise ValueError("Length must be greater than 0")
-        return v
-
-    @field_validator("elevation_gain")
-    @classmethod
-    def elevation_must_be_positive(cls, v):
-        if v < 0:
-            raise ValueError("Elevation gain must be a positive number")
-        return v
 
 
 class RaceBase(BaseModel):
@@ -61,39 +40,19 @@ class RaceBase(BaseModel):
 class RegistrationBase(BaseModel):
     payment_status: PaymentStatusEnum = PaymentStatusEnum.PENDING
     bib_number: str
-    track_id: int
+    race_id: int
     @field_validator("bib_number")
     @classmethod
     def bib_not_empty(cls, v):
         if not v.strip():
             raise ValueError("Bib number cannot be empty")
         return v.strip()
-
-
-class ObstacleBase(BaseModel):
-    name: str
-    description: str | None = None
-    difficulty_score: DifficultyScoreEnum
-
-    @field_validator("name")
-    @classmethod
-    def name_not_empty(cls, v):
-        if not v.strip():
-            raise ValueError("Obstacle name cannot be empty")
-        return v.strip()
-
 ## Response models
-
-class TrackResponse(TrackBase):
-    id: int
-    model_config = ConfigDict(from_attributes=True)
-
 class RaceResponse(RaceBase):
     id: int
     organiser_id: int
     created_at: datetime
     is_active: bool
-    tracks: List[TrackResponse] = Field(default_factory=list)
     model_config = ConfigDict(from_attributes=True)
 
     @field_serializer("created_at")
@@ -107,24 +66,9 @@ class RegistrationResponse(RegistrationBase):
     registration_date: datetime
     model_config = ConfigDict(from_attributes=True)
 
-class ObstacleResponse(ObstacleBase):
-    id: int
-    model_config = ConfigDict(from_attributes=True)
-
 ## Create/Update models
 
-class TrackCreate(TrackBase):
-    pass
-
 class RaceCreate(RaceBase):
-    tracks: List[TrackCreate]
-    @field_validator("tracks")
-    @classmethod
-    def must_have_at_least_one_track(cls, v):
-        if len(v) == 0:
-            raise ValueError("Race must have at least one track")
-        return v
-    
     @model_validator(mode="after")
     def deadline_before_race(self):
         if self.deadline >= self.date_time:
@@ -133,48 +77,8 @@ class RaceCreate(RaceBase):
             raise ValueError("Race date must be in the future")
         return self
 
-
-class CreateObstacle(ObstacleBase):
-    order: int
-    distance_from_start_km: float
-    
-    @field_validator("distance_from_start_km")
-    @classmethod
-    def distance_must_be_positive(cls, v):
-        if v < 0:
-            raise ValueError("Distance from start must be a positive number")
-        return v
-    
-    @field_validator("order")
-    @classmethod
-    def order_must_be_positive(cls, v):
-        if v <= 0:
-            raise ValueError("Order must be greater than 0")
-        return v
-
 class RegistrationCreate(RegistrationBase):
     pass
-
-class CreateTrack(TrackBase):
-    pass
-
-class TrackObstacleCreate(BaseModel):
-    order: int
-    distance_from_start_km: float
-    
-    @field_validator("distance_from_start_km")
-    @classmethod
-    def distance_must_be_positive(cls, v):
-        if v < 0:
-            raise ValueError("Distance from start must be a positive number")
-        return v
-    
-    @field_validator("order")
-    @classmethod
-    def order_must_be_positive(cls, v):
-        if v <= 0:
-            raise ValueError("Order must be greater than 0")
-        return v
 
 class RaceUpdate(BaseModel):
     name: str | None = None
@@ -184,14 +88,3 @@ class RaceUpdate(BaseModel):
     max_participants: int | None = None
     status: RaceStatusEnum | None = None
     price: float | None = None
-
-class TrackUpdate(BaseModel):
-    length_km: float | None = None
-    elevation_gain: int | None = None
-    terrain_type: TerrainTypeEnum | None = None
-    description: str | None = None
-
-class ObstacleUpdate(BaseModel):
-    name: str | None = None
-    description: str | None = None
-    difficulty_score: DifficultyScoreEnum | None = None

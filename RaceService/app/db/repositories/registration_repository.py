@@ -29,12 +29,11 @@ async def get_registrations_by_participant_id(db: AsyncSession, participant_id: 
     )
     return result.scalars().all()
 
-async def create_registration(db: AsyncSession, participant_id: int, race_id: int, track_id: int, data: RegistrationCreate) -> Registration | None:
+async def create_registration(db: AsyncSession, participant_id: int, race_id: int, data: RegistrationCreate) -> Registration | None:
     try:
         registration_model = Registration(
             participant_id=participant_id,
             race_id=race_id,
-            track_id=track_id,
             payment_status=data.payment_status,
             bib_number=data.bib_number
         )

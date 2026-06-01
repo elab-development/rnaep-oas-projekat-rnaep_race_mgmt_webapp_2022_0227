@@ -1,9 +1,9 @@
 from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
-from app.db.repositories import race_repository, track_repository
+from app.db.repositories import race_repository
 from app.enum import RaceStatusEnum
-from app.api.schema import RegistrationCreate, RegistrationResponse, RegistrationResponse
+from app.api.schema import RegistrationCreate, RegistrationResponse
 from app.db.repositories import registration_repository  
 #Registration service
 
@@ -18,10 +18,7 @@ async def get_registrations_by_participant_id(db: AsyncSession, participant_id: 
     return [RegistrationResponse.model_validate(reg) for reg in registrations]
 
 async def create_registration(db: AsyncSession, participant_id: int, data: RegistrationCreate):
-    track = await track_repository.get_track_by_id(db, data.track_id)
-    if not track:
-        raise HTTPException(status_code=404, detail="Track not found")
-    race = await race_repository.get_race_by_id(db, track.race_id)
+    race = await race_repository.get_race_by_id(db, data.race_id)
     if not race:
         raise HTTPException(status_code=404, detail="Race not found")
     if race.status != RaceStatusEnum.UPCOMING:
@@ -29,7 +26,7 @@ async def create_registration(db: AsyncSession, participant_id: int, data: Regis
     if datetime.now(timezone.utc) > race.deadline:
         raise HTTPException(status_code=400, detail="Registration deadline has passed") 
     registration = await registration_repository.create_registration(
-        db, participant_id, race.id, data.track_id, data
+        db, participant_id, race.id, data
     )
     return RegistrationResponse.model_validate(registration)
 

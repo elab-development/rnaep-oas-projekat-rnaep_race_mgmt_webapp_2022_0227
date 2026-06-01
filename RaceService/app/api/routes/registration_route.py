@@ -8,13 +8,13 @@ from app.api.schema import RegistrationCreate, RegistrationResponse
 
 registration_router = APIRouter(prefix="/api/registration", tags=["Registrations"])
 
+@registration_router.get("/participant/{participant_id}", response_model=List[RegistrationResponse], status_code=status.HTTP_200_OK)
+async def get_registrations_by_participant_id(participant_id: int, db: AsyncSession = Depends(get_db)):
+    return await registration_service.get_registrations_by_participant_id(db, participant_id)
+
 @registration_router.get("/{registration_id}", response_model=RegistrationResponse, status_code=status.HTTP_200_OK)
 async def get_registration(registration_id: int, db: AsyncSession = Depends(get_db)):
     return await registration_service.get_registration_by_id(db, registration_id)  
-
-@registration_router.get("/{participant_id}/participant", response_model=List[RegistrationResponse], status_code=status.HTTP_200_OK)
-async def get_registrations_by_participant_id(participant_id: int, db: AsyncSession = Depends(get_db)):
-    return await registration_service.get_registrations_by_participant_id(db, participant_id)
 
 @registration_router.post("/", response_model=RegistrationResponse, status_code=status.HTTP_201_CREATED)
 async def create_registration(data: RegistrationCreate, participant_id: int, db: AsyncSession = Depends(get_db)):
