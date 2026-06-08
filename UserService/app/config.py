@@ -7,9 +7,7 @@ class Settings(BaseSettings):
         extra="ignore",
         env_file_encoding="utf-8"
     )
-    database_url: str = Field(validation_alias="user_database_url")
-    secret_key: SecretStr = Field(validation_alias="user_secret_key")
-    algorithm: str = Field(default="HS256", validation_alias="user_algorithm")
-    access_token_expire_days: int = Field(default=30, validation_alias="user_access_token_expire_days")
+    database_url: str = Field(validation_alias="payment_database_url")
+    secret_key: SecretStr = Field(validation_alias="payment_secret_key")
 
 settings = Settings()
