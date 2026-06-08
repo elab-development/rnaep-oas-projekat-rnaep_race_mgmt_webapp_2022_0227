@@ -4,6 +4,8 @@ services:
     container_name: user_service
     ports:
       - "8000:8000"
+    networks:
+      - obstarace-net
     env_file:
       - .env
     environment:
@@ -15,6 +17,8 @@ services:
   user-db:
     image: postgres:16
     container_name: user_db
+    networks:
+      - obstarace-net
     env_file:
       - .env
     environment:
@@ -31,12 +35,13 @@ services:
       timeout: 5s
       retries: 5
 
-
   race-service:
     build: ./RaceService
     container_name: race_service
     ports:
       - "8001:8001"
+    networks:
+      - obstarace-net
     env_file:
       - .env
     environment:
@@ -44,9 +49,12 @@ services:
     depends_on:
       race-db:
         condition: service_healthy
+
   race-db:
     image: postgres:16
     container_name: race_db
+    networks:
+      - obstarace-net
     env_file:
       - .env
     environment:
@@ -63,6 +71,59 @@ services:
       timeout: 5s
       retries: 5
 
+  payment-service:
+    build: ./PaymentService
+    container_name: payment_service
+    ports:
+      - "8003:8003"
+    networks:
+      - obstarace-net
+    env_file:
+      - .env
+    environment:
+      - PAYMENT_DATABASE_URL=${PAYMENT_DATABASE_URL}
+    depends_on:
+      payment-db:
+        condition: service_healthy
+
+  payment-db:
+    image: postgres:16
+    container_name: payment_db
+    networks:
+      - obstarace-net
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${PAYMENT_DATABASE_USERNAME}
+      - POSTGRES_PASSWORD=${PAYMENT_DATABASE_PASSWORD}
+      - POSTGRES_DB=${PAYMENT_DATABASE_NAME}
+    ports:
+      - "5436:5432"
+    volumes:
+      - payment_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PAYMENT_DATABASE_USERNAME} -d ${PAYMENT_DATABASE_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  stripe-cli:
+    image: stripe/stripe-cli
+    container_name: stripe_cli
+    command: listen --forward-to payment-service:8003/payments/webhook
+    restart: on-failure
+    networks:
+      - obstarace-net
+    environment:
+      - STRIPE_API_KEY=${PAYMENT_SECRET_KEY}
+    depends_on:
+      - payment-service
+
 volumes:
   user_db_data:
   race_db_data:
+  payment_db_data:
+
+networks:
+  obstarace-net:
+    driver: bridge

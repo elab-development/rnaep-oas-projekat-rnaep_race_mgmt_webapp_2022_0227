@@ -13,6 +13,12 @@ async def get_payment_by_id(db: AsyncSession, payment_id: int):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found")
     return PaymentResponse.model_validate(payment)
 
+async def get_payments_by_user_id(db: AsyncSession, user_id: int):
+    payment = await repository.get_payments_by_user_id(db, user_id)
+    if not payment:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payments not found")
+    return PaymentResponse.model_validate(payment)
+
 async def create_checkout_session(
     db: AsyncSession,
     user_id: int,
