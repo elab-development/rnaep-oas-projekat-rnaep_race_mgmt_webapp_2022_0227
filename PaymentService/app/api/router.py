@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Header, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.db import get_db
-from app.api import service
+from app import service
 from app.api.schema import PaymentCreate, PaymentResponse, CheckoutResponse
 
 router = APIRouter(prefix="/payments", tags=["payments"])
