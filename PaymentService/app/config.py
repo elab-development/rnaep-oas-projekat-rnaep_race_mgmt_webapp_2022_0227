@@ -7,9 +7,10 @@ class Settings(BaseSettings):
         extra="ignore",
         env_file_encoding="utf-8"
     )
-    database_url: str = Field(validation_alias="user_database_url")
-    secret_key: SecretStr = Field(validation_alias="user_secret_key")
-    algorithm: str = Field(default="HS256", validation_alias="user_algorithm")
-    access_token_expire_days: int = Field(default=30, validation_alias="user_access_token_expire_days")
+    database_url: str = Field(validation_alias="payment_database_url")
+    secret_key: SecretStr = Field(validation_alias="payment_secret_key")
+    stripe_webhook_secret: str = Field(validation_alias="payment_webhook_secret")
+    stripe_success_url: str = Field(validation_alias="payment_success_url")
+    stripe_cancel_url: str = Field(validation_alias="payment_cancel_url")
 
 settings = Settings()

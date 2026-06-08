@@ -50,6 +50,8 @@ async def update_payment_status(
     new_status: PaymentStatus
 ):
     payment = await get_payment_by_stripe_session_id(db, stripe_session_id)
+    if not payment or payment.status == new_status:
+        return payment 
     if not payment:
         return None
     payment.status = new_status

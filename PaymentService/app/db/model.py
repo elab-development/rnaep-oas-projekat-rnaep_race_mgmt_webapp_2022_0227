@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Integer, String, DateTime, Numeric
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.types import Enum as SAEnum
@@ -21,4 +21,4 @@ class Payment(Base):
     )
     amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
