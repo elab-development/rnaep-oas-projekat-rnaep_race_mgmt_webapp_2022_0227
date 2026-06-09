@@ -1,10 +1,10 @@
 from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
-from app.db.repositories import race_repository
-from app.enum import RaceStatusEnum
-from app.api.schema import RegistrationCreate, RegistrationResponse
-from app.db.repositories import registration_repository  
+from Services.RaceService.app.db.repositories import race_repository
+from Services.RaceService.app.enum import RaceStatusEnum
+from Services.RaceService.app.api.schema import RegistrationCreate, RegistrationResponse
+from Services.RaceService.app.db.repositories import registration_repository  
 #Registration service
 
 async def get_registration_by_id(db: AsyncSession, registration_id: int):
@@ -20,11 +20,17 @@ async def get_registrations_by_participant_id(db: AsyncSession, participant_id: 
 async def create_registration(db: AsyncSession, participant_id: int, data: RegistrationCreate):
     race = await race_repository.get_race_by_id(db, data.race_id)
     if not race:
-        raise HTTPException(status_code=404, detail="Race not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Race not found")
+    existing_registration = await registration_repository.get_registration_by_participant_and_race(db, participant_id, data.race_id)
+    if existing_registration:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Already registered for this race")
     if race.status != RaceStatusEnum.UPCOMING:
-        raise HTTPException(status_code=400, detail="Race is not open for registration")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Race is not open for registration")
     if datetime.now(timezone.utc) > race.deadline:
-        raise HTTPException(status_code=400, detail="Registration deadline has passed") 
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Registration deadline has passed") 
+    count = await registration_repository.get_registration_count_by_race(db, data.race_id)
+    if count >= race.max_participants:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Race is full")
     registration = await registration_repository.create_registration(
         db, participant_id, race.id, data
     )

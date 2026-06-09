@@ -2,9 +2,9 @@ from typing import List
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends, status
-from app.db.db import get_db
-from app.services import registration_service
-from app.api.schema import RegistrationCreate, RegistrationResponse
+from Services.RaceService.app.db.db import get_db
+from Services.RaceService.app.services import registration_service
+from Services.RaceService.app.api.schema import RegistrationCreate, RegistrationResponse
 
 registration_router = APIRouter(prefix="/api/registration", tags=["Registrations"])
 

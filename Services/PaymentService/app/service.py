@@ -1,10 +1,10 @@
 import stripe
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
-from app.db import repository
-from app.api.schema import CheckoutResponse, PaymentResponse
-from app.config import settings
-from app.enum import PaymentStatus
+from Services.PaymentService.app.db import repository
+from Services.PaymentService.app.api.schema import CheckoutResponse, PaymentResponse
+from Services.PaymentService.app.config import settings
+from Services.PaymentService.app.enum import PaymentStatus
 
 stripe.api_key = settings.secret_key.get_secret_value()
 
