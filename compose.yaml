@@ -1,6 +1,6 @@
 services:
   user-service:
-    build: ./UserService
+    build: Services/UserService
     container_name: user_service
     ports:
       - "8000:8000"
@@ -36,7 +36,7 @@ services:
       retries: 5
 
   race-service:
-    build: ./RaceService
+    build: Services/RaceService
     container_name: race_service
     ports:
       - "8001:8001"
@@ -72,7 +72,7 @@ services:
       retries: 5
 
   payment-service:
-    build: ./PaymentService
+    build: Services/PaymentService
     container_name: payment_service
     ports:
       - "8004:8004"
