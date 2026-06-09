@@ -1,10 +1,10 @@
 from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
-from Services.RaceService.app.db.repositories import race_repository
-from Services.RaceService.app.enum import RaceStatusEnum
-from Services.RaceService.app.api.schema import RegistrationCreate, RegistrationResponse
-from Services.RaceService.app.db.repositories import registration_repository  
+from app.db.repositories import race_repository
+from app.enum import RaceStatusEnum
+from app.api.schema import RegistrationCreate, RegistrationResponse
+from app.db.repositories import registration_repository  
 #Registration service
 
 async def get_registration_by_id(db: AsyncSession, registration_id: int):

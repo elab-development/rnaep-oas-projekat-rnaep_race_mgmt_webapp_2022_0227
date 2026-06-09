@@ -46,6 +46,7 @@ services:
       - .env
     environment:
       - RACE_DATABASE_URL=${RACE_DATABASE_URL}
+      - SECRET_KEY=${USER_SECRET_KEY}
     depends_on:
       race-db:
         condition: service_healthy
@@ -75,13 +76,14 @@ services:
     build: Services/PaymentService
     container_name: payment_service
     ports:
-      - "8004:8004"
+      - "8002:8002"
     networks:
       - obstarace-net
     env_file:
       - .env
     environment:
       - PAYMENT_DATABASE_URL=${PAYMENT_DATABASE_URL}
+      - SECRET_KEY=${USER_SECRET_KEY}
     depends_on:
       payment-db:
         condition: service_healthy
@@ -98,7 +100,7 @@ services:
       - POSTGRES_PASSWORD=${PAYMENT_DATABASE_PASSWORD}
       - POSTGRES_DB=${PAYMENT_DATABASE_NAME}
     ports:
-      - "5436:5432"
+      - "5435:5432"
     volumes:
       - payment_db_data:/var/lib/postgresql/data
     healthcheck:
@@ -110,7 +112,7 @@ services:
   stripe-cli:
     image: stripe/stripe-cli
     container_name: stripe_cli
-    command: listen --forward-to payment-service:8004/payments/webhook
+    command: listen --forward-to payment-service:8002/payments/webhook
     restart: on-failure
     networks:
       - obstarace-net

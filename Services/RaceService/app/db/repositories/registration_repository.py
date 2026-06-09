@@ -3,9 +3,9 @@ import string
 
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from Services.RaceService.app.enum import PaymentStatusEnum
-from Services.RaceService.app.api.schema import RegistrationCreate
-from Services.RaceService.app.db.models import  Registration
+from app.enum import PaymentStatusEnum
+from app.api.schema import RegistrationCreate
+from app.db.models import  Registration
 
 #Registration repository functions
 

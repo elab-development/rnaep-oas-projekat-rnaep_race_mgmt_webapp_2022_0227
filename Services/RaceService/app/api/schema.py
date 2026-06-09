@@ -1,6 +1,6 @@
 from typing import List
 from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator, model_validator
-from Services.RaceService.app.enum import RaceStatusEnum, PaymentStatusEnum
+from app.enum import RaceStatusEnum, PaymentStatusEnum
 from datetime import datetime, timezone
 
 
