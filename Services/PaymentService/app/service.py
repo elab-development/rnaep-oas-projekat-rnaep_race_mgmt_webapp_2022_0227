@@ -6,7 +6,7 @@ from app.api.schema import CheckoutResponse, PaymentResponse
 from app.config import settings
 from app.enum import PaymentStatus
 
-stripe.api_key = settings.secret_key.get_secret_value()
+stripe.api_key = settings.payment_secret_key.get_secret_value()
 
 async def get_payment_by_id(db: AsyncSession, payment_id: int):
     payment = await repository.get_payment_by_id(db, payment_id)
@@ -27,6 +27,8 @@ async def create_checkout_session(
     amount: float
 ):
     try:
+        if amount <= 0:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Amount must be greater than zero")
         session = stripe.checkout.Session.create(
             payment_method_types=["card"],
             line_items=[{

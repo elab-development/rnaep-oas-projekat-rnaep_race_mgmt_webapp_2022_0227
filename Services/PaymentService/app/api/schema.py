@@ -2,7 +2,6 @@ from pydantic import BaseModel
 from app.enum import PaymentStatus
 
 class PaymentCreate(BaseModel):
-    user_id: int
     registration_id: int
     amount: float
 
