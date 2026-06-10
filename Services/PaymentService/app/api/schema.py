@@ -13,7 +13,7 @@ class PaymentResponse(BaseModel):
     stripe_session_id: str
     status: PaymentStatus
     amount: float
-
+    checkout_url: str | None = None
     model_config = {"from_attributes": True}
 
 

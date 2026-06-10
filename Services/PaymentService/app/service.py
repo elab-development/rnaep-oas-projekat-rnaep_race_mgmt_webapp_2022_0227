@@ -54,7 +54,8 @@ async def create_checkout_session(
             user_id=user_id,
             registration_id=registration_id,
             stripe_session_id=session.id,
-            amount=amount
+            amount=amount,
+            checkout_url=session.url
         )
         await db.commit()
         return CheckoutResponse(checkout_url=session.url)
@@ -77,3 +78,6 @@ async def handle_webhook(db: AsyncSession, payload: bytes, sig_header: str):
         payment = await repository.update_payment_status(db, session["id"], PaymentStatus.FAILED)
         await send_payment_failed(PaymentResponse.model_validate(payment))
     return {"status": "ok"}
+
+async def delete_payment_by_registration_id(db: AsyncSession, registration_id: int):
+    await repository.delete_payment_by_registration_id(db, registration_id)

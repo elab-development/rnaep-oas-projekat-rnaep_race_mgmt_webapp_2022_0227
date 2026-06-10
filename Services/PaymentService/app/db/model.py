@@ -20,5 +20,5 @@ class Payment(Base):
         nullable=False
     )
     amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
-    
+    checkout_url: Mapped[str | None] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))

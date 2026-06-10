@@ -5,12 +5,13 @@ from aiokafka.errors import KafkaConnectionError, GroupCoordinatorNotAvailableEr
 from app.api.schema import PaymentCreate
 from app.config import settings
 from app.db.db import SessionLocal
-from app.service import create_checkout_session
+from app.service import create_checkout_session, delete_payment_by_registration_id
 
 async def start_consumer():
     global consumer
     consumer = AIOKafkaConsumer(
         "registration_created",
+        "registration_deleted",
         bootstrap_servers=settings.kafka_bootstrap_servers,
         group_id="payment_service_group"
     )
@@ -29,9 +30,11 @@ async def start_consumer():
         try:
             data = json.loads(msg.value.decode('utf-8'))
             print(f"Payment Service: Accepted message from Kafka -> {data}")
-            
-            await handle_registration_created(data)
-            
+            if msg.topic == "registration_created":
+                await handle_registration_created(data)
+            elif msg.topic == "registration_deleted":
+                await handle_registration_deleted(data)
+
             print("Payment Service: Successfully processed registration_created and created Stripe session!")
         except Exception as e:
             print(f"ERROR in Payment Service Consumer-u: {str(e)}")
@@ -53,3 +56,7 @@ async def handle_registration_created(data: dict):
             registration_id=payment_data.registration_id,
             amount=payment_data.amount
         )
+
+async def handle_registration_deleted(data: dict):
+    async with SessionLocal() as db:
+        await delete_payment_by_registration_id(db, data["registration_id"])

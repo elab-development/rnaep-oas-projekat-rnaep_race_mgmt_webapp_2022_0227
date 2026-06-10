@@ -32,3 +32,10 @@ async def send_registration_created(registration: RegistrationResponse, amount: 
         "registration_created",
         json.dumps(message).encode('utf-8')
     )
+
+async def send_registration_deleted(registration_id: int):
+    message = {"registration_id": registration_id}
+    await producer.send_and_wait(
+        "registration_deleted",
+        json.dumps(message).encode('utf-8')
+    )

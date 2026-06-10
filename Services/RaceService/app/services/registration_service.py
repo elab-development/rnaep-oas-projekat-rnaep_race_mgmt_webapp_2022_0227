@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
-from app.kafka.producer import send_registration_created
+from app.kafka.producer import send_registration_created, send_registration_deleted
 from app.db.repositories import race_repository
 from app.enum import RaceStatusEnum
 from app.api.schema import RegistrationCreate, RegistrationResponse
@@ -50,4 +50,5 @@ async def delete_registration(db: AsyncSession, registration_id: int, participan
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Registration not found")
     if registration.participant_id != participant_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to delete this registration")
+    await send_registration_deleted(registration_id)
     return await registration_repository.delete_registration(db, registration_id)
