@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
+from app.kafka.producer import send_registration_created
 from app.db.repositories import race_repository
 from app.enum import RaceStatusEnum
 from app.api.schema import RegistrationCreate, RegistrationResponse
@@ -34,7 +35,9 @@ async def create_registration(db: AsyncSession, participant_id: int, data: Regis
     registration = await registration_repository.create_registration(
         db, participant_id, race.id, data
     )
-    return RegistrationResponse.model_validate(registration)
+    response = RegistrationResponse.model_validate(registration)
+    await send_registration_created(response, float(race.price))
+    return response
 
 async def delete_registration(db: AsyncSession, registration_id: int, participant_id: int):
     registration = await registration_repository.get_registration_by_id(db, registration_id)
