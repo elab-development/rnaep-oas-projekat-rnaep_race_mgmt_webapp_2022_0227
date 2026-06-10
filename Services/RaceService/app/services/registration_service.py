@@ -32,12 +32,17 @@ async def create_registration(db: AsyncSession, participant_id: int, data: Regis
     count = await registration_repository.get_registration_count_by_race(db, data.race_id)
     if count >= race.max_participants:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Race is full")
-    registration = await registration_repository.create_registration(
-        db, participant_id, race.id, data
-    )
-    response = RegistrationResponse.model_validate(registration)
-    await send_registration_created(response, float(race.price))
-    return response
+    try:
+        registration = await registration_repository.create_registration(
+            db, participant_id, race.id, data
+        )
+        response = RegistrationResponse.model_validate(registration)
+        await send_registration_created(response, float(race.price))
+        await db.commit()
+        return response
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 async def delete_registration(db: AsyncSession, registration_id: int, participant_id: int):
     registration = await registration_repository.get_registration_by_id(db, registration_id)

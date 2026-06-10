@@ -1,5 +1,7 @@
+import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from app.kafka.consumer import start_consumer, stop_consumer
 from app.kafka.producer import start_producer, stop_producer
 from app.api.routes import race_router, registration_router
 from middleware import validation_error_handler
@@ -7,8 +9,10 @@ from middleware import validation_error_handler
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await start_producer()
+    asyncio.create_task(start_consumer())
     yield
     await stop_producer()
+    await stop_consumer()
 
 app = FastAPI(lifespan=lifespan)
 

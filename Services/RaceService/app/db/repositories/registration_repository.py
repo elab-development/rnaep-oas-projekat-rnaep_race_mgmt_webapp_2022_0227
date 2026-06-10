@@ -1,6 +1,5 @@
 import random
 import string
-
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.enum import PaymentStatusEnum
@@ -56,21 +55,16 @@ async def get_registration_count_by_race(db, race_id):
     return result.scalar()
     
 async def create_registration(db: AsyncSession, participant_id: int, race_id: int, data: RegistrationCreate) -> Registration | None:
-    try:
-        bib_number = ''.join(random.choices(string.digits, k=6))
-        registration_model = Registration(
-            participant_id=participant_id,
-            race_id=race_id,
-            payment_status=PaymentStatusEnum.PENDING,
-            bib_number=bib_number
-        )
-        db.add(registration_model)
-        await db.commit()
-        await db.refresh(registration_model)
-        return registration_model
-    except Exception as e:
-        await db.rollback()
-        raise e
+    bib_number = ''.join(random.choices(string.digits, k=6))
+    registration_model = Registration(
+        participant_id=participant_id,
+        race_id=race_id,
+        payment_status=PaymentStatusEnum.PENDING,
+        bib_number=bib_number
+    )
+    db.add(registration_model)
+    await db.flush()
+    return registration_model
 
 async def delete_registration(db: AsyncSession, registration_id: int) -> bool:
     try:
@@ -80,6 +74,19 @@ async def delete_registration(db: AsyncSession, registration_id: int) -> bool:
         await db.delete(registration)
         await db.commit()
         return True
+    except Exception as e:
+        await db.rollback()
+        raise e
+    
+async def update_registration_payment_status(db: AsyncSession, registration_id: int, status: PaymentStatusEnum):
+    try:
+        registration = await get_registration_by_id(db, registration_id)
+        if not registration:
+            return None
+        registration.payment_status = status
+        await db.commit()
+        await db.refresh(registration)
+        return registration
     except Exception as e:
         await db.rollback()
         raise e
