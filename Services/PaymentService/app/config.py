@@ -14,5 +14,6 @@ class Settings(BaseSettings):
     stripe_webhook_secret: str = Field(validation_alias="payment_webhook_secret")
     stripe_success_url: str = Field(validation_alias="payment_success_url")
     stripe_cancel_url: str = Field(validation_alias="payment_cancel_url")
+    kafka_bootstrap_servers: str = Field(validation_alias="payment_kafka_bootstrap_servers")
 
 settings = Settings()

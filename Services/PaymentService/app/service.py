@@ -1,4 +1,5 @@
 import stripe
+from app.kafka.producer import send_payment_completed, send_payment_failed
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
 from app.db import repository
@@ -65,8 +66,9 @@ async def handle_webhook(db: AsyncSession, payload: bytes, sig_header: str):
     session = event["data"]["object"]
 
     if event["type"] == "checkout.session.completed":
-        await repository.update_payment_status(db, session["id"], PaymentStatus.SUCCEEDED)
-    elif event["type"] == "checkout.session.expired":
-        await repository.update_payment_status(db, session["id"], PaymentStatus.FAILED)
-
+        payment = await repository.update_payment_status(db, session["id"], PaymentStatus.SUCCEEDED)
+        await send_payment_completed(PaymentResponse.model_validate(payment))
+    elif event["type"] in ("checkout.session.expired", "checkout.session.async_payment_failed"):
+        payment = await repository.update_payment_status(db, session["id"], PaymentStatus.FAILED)
+        await send_payment_failed(PaymentResponse.model_validate(payment))
     return {"status": "ok"}
