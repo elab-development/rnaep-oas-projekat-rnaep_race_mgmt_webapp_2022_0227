@@ -12,16 +12,17 @@ async def get_race(race_id: int, db: AsyncSession = Depends(get_db), _: dict = D
     return await race_service.get_race_by_id(db, race_id)
 
 @race_router.post("/", response_model=RaceResponse, status_code=status.HTTP_201_CREATED)
-async def create_race(data: RaceCreate, db: AsyncSession = Depends(get_db), _: dict = Depends(require_organiser)):
-    organiser_id = int(get_current_user()["sub"])
+async def create_race(data: RaceCreate, db: AsyncSession = Depends(get_db), current_user: dict = Depends(require_organiser)):
+    organiser_id = int(current_user["sub"])
     return await race_service.create_race(db, data, organiser_id)
 
 @race_router.patch("/{race_id}", response_model=RaceResponse, status_code=status.HTTP_200_OK)
-async def update_race(race_id: int, data: RaceUpdate, db: AsyncSession = Depends(get_db), _: dict = Depends(require_organiser)):
-    organiser_id = int(get_current_user()["sub"])
+async def update_race(race_id: int, data: RaceUpdate, db: AsyncSession = Depends(get_db), current_user: dict = Depends(require_organiser)):
+    organiser_id = int(current_user["sub"])
     return await race_service.patch_race(db, race_id, organiser_id, data)
 
 @race_router.delete("/{race_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_race(race_id: int, db: AsyncSession = Depends(get_db), _: dict = Depends(require_organiser)):
-    organiser_id = int(get_current_user()["sub"])
-    await race_service.delete_race(db, race_id, organiser_id)    
+async def delete_race(race_id: int, db: AsyncSession = Depends(get_db), current_user: dict = Depends(require_organiser)):
+    organiser_id = int(current_user["sub"])
+    await race_service.delete_race(db, race_id, organiser_id)
+    return None

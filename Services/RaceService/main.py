@@ -9,9 +9,14 @@ from middleware import validation_error_handler
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await start_producer()
-    asyncio.create_task(start_consumer())
+    consumer_task = asyncio.create_task(start_consumer())
     yield
     await stop_producer()
+    consumer_task.cancel()
+    try:
+        await consumer_task
+    except asyncio.CancelledError:
+        pass
     await stop_consumer()
 
 app = FastAPI(lifespan=lifespan)

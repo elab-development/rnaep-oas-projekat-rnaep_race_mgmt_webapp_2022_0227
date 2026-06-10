@@ -48,14 +48,19 @@ async def create_checkout_session(
         )
     except stripe.StripeError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    payment = await repository.create_payment(
-        db=db,
-        user_id=user_id,
-        registration_id=registration_id,
-        stripe_session_id=session.id,
-        amount=amount
-    )
-    return CheckoutResponse(checkout_url=session.url)
+    try:
+        payment = await repository.create_payment(
+            db=db,
+            user_id=user_id,
+            registration_id=registration_id,
+            stripe_session_id=session.id,
+            amount=amount
+        )
+        await db.commit()
+        return CheckoutResponse(checkout_url=session.url)
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 async def handle_webhook(db: AsyncSession, payload: bytes, sig_header: str):
     try:

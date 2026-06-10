@@ -1,5 +1,7 @@
+import asyncio
 import json
 from aiokafka import AIOKafkaProducer
+from aiokafka.errors import GroupCoordinatorNotAvailableError, KafkaConnectionError
 from app.config import settings
 from app.api.schema import RegistrationResponse
 
@@ -8,7 +10,15 @@ producer = None
 async def start_producer():
     global producer
     producer = AIOKafkaProducer(bootstrap_servers=settings.kafka_bootstrap_servers)
-    await producer.start()
+    while True:
+        try:
+            print("Race Service: Attempting to connect Producer to Kafka...")
+            await producer.start()
+            print("Race Service: Producer successfully connected to Kafka!")
+            break
+        except (KafkaConnectionError, GroupCoordinatorNotAvailableError) as e:
+            print(f"Race Service: Producer backup/retry due to: {e}")
+            await asyncio.sleep(3)
 
 async def stop_producer():
     global producer
