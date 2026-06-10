@@ -29,14 +29,16 @@ async def create_payment(
     user_id: int,
     registration_id: int,
     stripe_session_id: str,
-    amount: float
+    amount: float,
+    checkout_url: str | None = None
 ):
     payment = Payment(
         user_id=user_id,
         registration_id=registration_id,
         stripe_session_id=stripe_session_id,
         amount=amount,
-        status=PaymentStatus.PENDING
+        status=PaymentStatus.PENDING,
+        checkout_url=checkout_url
     )
     db.add(payment)
     await db.commit()
@@ -58,3 +60,12 @@ async def update_payment_status(
     await db.commit()
     await db.refresh(payment)
     return payment
+
+async def delete_payment_by_registration_id(db: AsyncSession, registration_id: int):
+    payment = await db.execute(
+        select(Payment).where(Payment.registration_id == registration_id)
+    )
+    payment = payment.scalar_one_or_none()
+    if payment:
+        await db.delete(payment)
+        await db.commit()

@@ -2,9 +2,8 @@ from logging.config import fileConfig
 from sqlalchemy.ext.asyncio import async_engine_from_config
 from sqlalchemy import pool
 from alembic import context
-
+from app.db.models import Race, Registration
 from app.db.db import Base
-from app.db.models import Race, Track, Registration, Obstacle, TrackObstacle
 
 config = context.config
 
@@ -27,8 +26,12 @@ def run_migrations_offline() -> None:
 
 
 async def run_migrations_online() -> None:
+    import os
+    configuration = config.get_section(config.config_ini_section, {})
+    configuration["sqlalchemy.url"] = os.environ.get("RACE_DATABASE_URL")
+    
     connectable = async_engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        configuration,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )

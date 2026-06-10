@@ -39,7 +39,7 @@ class RaceBase(BaseModel):
 
 class RegistrationBase(BaseModel):
     payment_status: PaymentStatusEnum = PaymentStatusEnum.PENDING
-    bib_number: str
+    bib_number: str | None = None
     race_id: int
     @field_validator("bib_number")
     @classmethod
