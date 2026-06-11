@@ -10,3 +10,4 @@ python-dotenv
 psycopg2-binary
 PyJWT
 aiokafka
+prometheus-fastapi-instrumentator
