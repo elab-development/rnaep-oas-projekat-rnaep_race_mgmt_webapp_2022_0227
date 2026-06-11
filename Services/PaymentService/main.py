@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from app.kafka.consumer import start_consumer, stop_consumer
 from app.kafka.producer import start_producer, stop_producer
 from app.api import router
+from prometheus_fastapi_instrumentator import Instrumentator
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -19,5 +20,7 @@ async def lifespan(app: FastAPI):
     await stop_producer()
 
 app = FastAPI(lifespan=lifespan)
+
+Instrumentator().instrument(app).expose(app)
 
 app.include_router(router.router)
