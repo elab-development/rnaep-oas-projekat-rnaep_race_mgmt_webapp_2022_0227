@@ -1,0 +1,200 @@
+services:
+  user-service:
+    build: Services/UserService
+    container_name: user_service
+    ports:
+      - "8000:8000"
+    networks:
+      - obstarace-net
+    env_file:
+      - .env
+    environment:
+      - USER_DATABASE_URL=${USER_DATABASE_URL}
+    depends_on:
+      user-db:
+        condition: service_healthy
+
+  user-db:
+    image: postgres:16
+    container_name: user_db
+    networks:
+      - obstarace-net
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${USER_DATABASE_USERNAME}
+      - POSTGRES_PASSWORD=${USER_DATABASE_PASSWORD}
+      - POSTGRES_DB=${USER_DATABASE_NAME}
+    ports:
+      - "5433:5432"
+    volumes:
+      - user_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${USER_DATABASE_USERNAME} -d ${USER_DATABASE_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  race-service:
+    build: Services/RaceService
+    container_name: race_service
+    ports:
+      - "8001:8001"
+    networks:
+      - obstarace-net
+    env_file:
+      - .env
+    environment:
+      - RACE_DATABASE_URL=${RACE_DATABASE_URL}
+      - SECRET_KEY=${USER_SECRET_KEY}
+      - RACE_KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
+    depends_on:
+      race-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  race-db:
+    image: postgres:16
+    container_name: race_db
+    networks:
+      - obstarace-net
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${RACE_DATABASE_USERNAME}
+      - POSTGRES_PASSWORD=${RACE_DATABASE_PASSWORD}
+      - POSTGRES_DB=${RACE_DATABASE_NAME}
+    ports:
+      - "5434:5432"
+    volumes:
+      - race_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${RACE_DATABASE_USERNAME} -d ${RACE_DATABASE_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  payment-service:
+    build: Services/PaymentService
+    container_name: payment_service
+    ports:
+      - "8002:8002"
+    networks:
+      - obstarace-net
+    env_file:
+      - .env
+    environment:
+      - PAYMENT_DATABASE_URL=${PAYMENT_DATABASE_URL}
+      - SECRET_KEY=${USER_SECRET_KEY}
+      - PAYMENT_KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
+    depends_on:
+      payment-db:
+        condition: service_healthy
+      race-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  payment-db:
+    image: postgres:16
+    container_name: payment_db
+    networks:
+      - obstarace-net
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${PAYMENT_DATABASE_USERNAME}
+      - POSTGRES_PASSWORD=${PAYMENT_DATABASE_PASSWORD}
+      - POSTGRES_DB=${PAYMENT_DATABASE_NAME}
+    ports:
+      - "5435:5432"
+    volumes:
+      - payment_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PAYMENT_DATABASE_USERNAME} -d ${PAYMENT_DATABASE_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  stripe-cli:
+    image: stripe/stripe-cli
+    container_name: stripe_cli
+    command: listen --forward-to payment-service:8002/payments/webhook
+    restart: on-failure
+    networks:
+      - obstarace-net
+    environment:
+      - STRIPE_API_KEY=${PAYMENT_SECRET_KEY}
+    depends_on:
+      - payment-service
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: zookeeper
+    networks:
+      - obstarace-net
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      KAFKA_OPTS: "-Dzookeeper.4lw.commands.whitelist=*"
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo ruok | nc localhost 2181 | grep imok"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: kafka
+    restart: on-failure
+    networks:
+      - obstarace-net
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true" 
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 1        
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0    
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 9092 || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yaml:/etc/prometheus/prometheus.yml
+    ports:
+    - "9090:9090"
+    networks:
+    - obstarace-net
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3001:3000"
+    networks:
+      - obstarace-net
+    depends_on:
+      - prometheus
+volumes:
+  user_db_data:
+  race_db_data:
+  payment_db_data:
+
+networks:
+  obstarace-net:
+    driver: bridge
