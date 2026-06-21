@@ -1,4 +1,6 @@
 import stripe
+import asyncio
+from aiobreaker import CircuitBreaker, CircuitBreakerError
 from app.kafka.producer import send_payment_completed, send_payment_failed
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
@@ -6,8 +8,11 @@ from app.db import repository
 from app.api.schema import CheckoutResponse, PaymentResponse
 from app.config import settings
 from app.enum import PaymentStatus
+from datetime import timedelta
 
 stripe.api_key = settings.payment_secret_key.get_secret_value()
+
+stripe_breaker = CircuitBreaker(fail_max=3, timeout_duration=timedelta(seconds=60), exclude=[stripe.error.CardError, stripe.error.InvalidRequestError])
 
 async def get_payment_by_id(db: AsyncSession, payment_id: int):
     payment = await repository.get_payment_by_id(db, payment_id)
@@ -21,30 +26,33 @@ async def get_payments_by_user_id(db: AsyncSession, user_id: int):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payments not found")
     return [PaymentResponse.model_validate(p) for p in payments]
 
-async def create_checkout_session(
-    db: AsyncSession,
-    user_id: int,
-    registration_id: int,
-    amount: float
-):
+@stripe_breaker
+async def _create_stripe_session(registration_id: int, amount: float):
+    return await asyncio.to_thread(
+        stripe.checkout.Session.create,
+        payment_method_types=["card"],
+        line_items=[{
+            "price_data": {
+                "currency": "usd",
+                "unit_amount": int(amount * 100),
+                "product_data": {"name": f"ObstaRace - Registration {registration_id}"},
+            },
+            "quantity": 1,
+        }],
+        mode="payment",
+        success_url=settings.stripe_success_url,
+        cancel_url=settings.stripe_cancel_url,
+    )
+
+async def create_checkout_session(db: AsyncSession, user_id: int, registration_id: int, amount: float):
+    if amount <= 0:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Amount must be greater than zero")
     try:
-        if amount <= 0:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Amount must be greater than zero")
-        session = stripe.checkout.Session.create(
-            payment_method_types=["card"],
-            line_items=[{
-                "price_data": {
-                    "currency": "usd",
-                    "unit_amount": int(amount * 100),
-                    "product_data": {
-                        "name": f"ObstaRace - Registration {registration_id}" 
-                    },
-                },
-                "quantity": 1  
-            }],
-            mode="payment",
-            success_url = settings.stripe_success_url,
-            cancel_url = settings.stripe_cancel_url
+        session = await _create_stripe_session(registration_id, amount)
+    except CircuitBreakerError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Payment provider is temporarily unavailable, please try again shortly."
         )
     except stripe.StripeError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
