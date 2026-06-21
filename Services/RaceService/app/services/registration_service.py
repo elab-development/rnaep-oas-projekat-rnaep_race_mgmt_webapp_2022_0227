@@ -8,10 +8,12 @@ from app.api.schema import RegistrationCreate, RegistrationResponse
 from app.db.repositories import registration_repository  
 #Registration service
 
-async def get_registration_by_id(db: AsyncSession, registration_id: int):
+async def get_registration_by_id(db: AsyncSession, registration_id: int, participant_id: int):
     registration = await registration_repository.get_registration_by_id(db, registration_id)
     if not registration:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Registration not found")
+    if registration.participant_id != participant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to view this registration")
     return RegistrationResponse.model_validate(registration)
 
 async def get_registrations_by_participant_id(db: AsyncSession, participant_id: int):
