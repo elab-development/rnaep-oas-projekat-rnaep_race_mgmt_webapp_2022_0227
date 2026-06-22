@@ -1,3 +1,4 @@
+from datetime import datetime
 from pydantic import BaseModel
 from app.enum import PaymentStatus
 
@@ -15,6 +16,7 @@ class PaymentResponse(BaseModel):
     amount: float
     checkout_url: str | None = None
     model_config = {"from_attributes": True}
+    created_at: datetime
 
 
 class CheckoutResponse(BaseModel):

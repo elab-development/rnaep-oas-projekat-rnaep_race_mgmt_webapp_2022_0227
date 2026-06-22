@@ -3,10 +3,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
 from app.kafka.producer import send_registration_created, send_registration_deleted
 from app.db.repositories import race_repository
-from app.enum import RaceStatusEnum
+from app.enum import RaceStatusEnum, PaymentStatusEnum
 from app.api.schema import RegistrationCreate, RegistrationResponse
 from app.db.repositories import registration_repository  
 #Registration service
+
+async def get_registrations_by_race_id(db: AsyncSession, race_id, organiser_id):
+    race = await race_repository.get_race_by_id(db,race_id)
+    if not race:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Race not found")
+    if race.organiser_id != organiser_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to access registrations for this race")
+    return await registration_repository.get_registrations_by_race_id(db,race_id)
 
 async def get_registration_by_id(db: AsyncSession, registration_id: int, participant_id: int):
     registration = await registration_repository.get_registration_by_id(db, registration_id)
@@ -52,5 +60,7 @@ async def delete_registration(db: AsyncSession, registration_id: int, participan
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Registration not found")
     if registration.participant_id != participant_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to delete this registration")
+    if registration.payment_status==PaymentStatusEnum.COMPLETED:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Registration can't be canceled")
     await send_registration_deleted(registration_id)
     return await registration_repository.delete_registration(db, registration_id)
