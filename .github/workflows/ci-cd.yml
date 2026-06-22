@@ -17,16 +17,16 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: Frontend/package-lock.json
+          cache-dependency-path: frontend/package-lock.json
 
       - run: npm ci
-        working-directory: Frontend
+        working-directory: frontend
 
       - run: npm run lint
-        working-directory: Frontend
+        working-directory: frontend
 
       - run: npm run build
-        working-directory: Frontend
+        working-directory: frontend
 
   backend-ci:
     name: Build ${{ matrix.service }}
@@ -41,7 +41,7 @@ jobs:
           - service: payment-service
             context: Services/PaymentService
           - service: frontend
-            context: Frontend
+            context: frontend
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
@@ -96,7 +96,7 @@ jobs:
       - name: Build & push frontend
         uses: docker/build-push-action@v5
         with:
-          context: Frontend
+          context: frontend
           push: true
           tags: ghcr.io/${{ github.repository }}/frontend:latest
           cache-from: type=gha
