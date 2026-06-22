@@ -15,3 +15,11 @@ def get_current_user(request: Request) -> dict:
             detail="Invalid or expired token"
         )
     return payload  
+
+def require_participant(current_user: dict = Depends(get_current_user)) -> dict:
+    if current_user.get("role") not in ("participant", "admin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only participants can perform this action"
+        )
+    return current_user

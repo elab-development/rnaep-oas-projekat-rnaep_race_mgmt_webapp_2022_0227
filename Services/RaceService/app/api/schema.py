@@ -38,15 +38,7 @@ class RaceBase(BaseModel):
         return v.strftime("%Y/%d/%m %H:%M")
 
 class RegistrationBase(BaseModel):
-    payment_status: PaymentStatusEnum = PaymentStatusEnum.PENDING
-    bib_number: str | None = None
     race_id: int
-    @field_validator("bib_number")
-    @classmethod
-    def bib_not_empty(cls, v):
-        if not v.strip():
-            raise ValueError("Bib number cannot be empty")
-        return v.strip()
 ## Response models
 class RaceResponse(RaceBase):
     id: int
@@ -63,6 +55,8 @@ class RegistrationResponse(RegistrationBase):
     id: int
     race_id: int
     participant_id: int
+    bib_number: str
+    payment_status: PaymentStatusEnum
     registration_date: datetime
     model_config = ConfigDict(from_attributes=True)
 

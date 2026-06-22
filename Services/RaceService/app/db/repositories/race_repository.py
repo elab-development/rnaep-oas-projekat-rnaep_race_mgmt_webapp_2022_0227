@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.schema import RaceCreate
 from app.db.models import Race
-
+from typing import Sequence
 
 
 # Repository functions for RaceService
@@ -12,6 +12,10 @@ async def get_race_by_id(db: AsyncSession, race_id: int) -> Race | None:
         select(Race).where(Race.id == race_id)
     )
     return result.scalar_one_or_none()
+
+async def get_races(db: AsyncSession) -> Sequence[Race]:
+    result = await db.execute(select(Race))
+    return result.scalars().all()
 
 async def create_race(db: AsyncSession, data: RaceCreate, organiser_id: int) -> Race:
     try:
