@@ -95,7 +95,15 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
-
+  frontend:
+    build: Frontend
+    container_name: frontend
+    ports:
+      - "5173:5173"
+    networks:
+      - obstarace-net
+    depends_on:
+      - nginx
   payment-db:
     image: postgres:16
     container_name: payment_db
