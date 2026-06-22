@@ -1,8 +1,8 @@
-"""unique registration_id on payments
+"""init_payments
 
-Revision ID: 45b9487bcf79
-Revises: 3816d24bf536
-Create Date: 2026-06-22 16:53:41.883682
+Revision ID: 2c6fbe8ea569
+Revises: 
+Create Date: 2026-06-22 19:12:58.225336
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '45b9487bcf79'
-down_revision: Union[str, Sequence[str], None] = '3816d24bf536'
+revision: str = '2c6fbe8ea569'
+down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

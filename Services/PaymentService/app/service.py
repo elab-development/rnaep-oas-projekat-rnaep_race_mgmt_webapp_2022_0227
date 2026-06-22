@@ -88,7 +88,7 @@ async def handle_webhook(db: AsyncSession, payload: bytes, stripe_signature: str
     except Exception:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid webhook payload")
 
-    session_id = event["data"]["object"].get("id")
+    session_id = event["data"]["object"]["id"]
 
     if event["type"] == "checkout.session.completed":
         payment = await repository.update_payment_status(db, session_id, new_status=PaymentStatusEnum.COMPLETED)
