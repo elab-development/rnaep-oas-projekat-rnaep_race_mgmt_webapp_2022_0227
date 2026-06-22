@@ -102,6 +102,8 @@ services:
       - "5173:5173"
     networks:
       - obstarace-net
+    environment:
+      - VITE_API_BASE_URL=http://nginx:80
     depends_on:
       - nginx
   payment-db:
