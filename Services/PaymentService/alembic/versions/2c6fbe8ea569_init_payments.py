@@ -1,8 +1,8 @@
-"""initial
+"""init_payments
 
-Revision ID: 446d38354bc0
+Revision ID: 2c6fbe8ea569
 Revises: 
-Create Date: 2026-06-09 01:02:40.712823
+Create Date: 2026-06-22 19:12:58.225336
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '446d38354bc0'
+revision: str = '2c6fbe8ea569'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -26,10 +26,14 @@ def upgrade() -> None:
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('registration_id', sa.Integer(), nullable=False),
     sa.Column('stripe_session_id', sa.String(), nullable=False),
-    sa.Column('status', sa.Enum('PENDING', 'SUCCEEDED', 'FAILED', 'REFUNDED', name='paymentstatus'), nullable=False),
+    sa.Column('status', sa.Enum('PENDING', 'COMPLETED', 'FAILED', name='paymentstatusenum'), nullable=False),
     sa.Column('amount', sa.Numeric(precision=10, scale=2), nullable=False),
+    sa.Column('checkout_url', sa.String(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('participant_email', sa.String(length=100), nullable=False),
+    sa.Column('participant_name', sa.String(length=100), nullable=False),
     sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('registration_id'),
     sa.UniqueConstraint('stripe_session_id')
     )
     # ### end Alembic commands ###
