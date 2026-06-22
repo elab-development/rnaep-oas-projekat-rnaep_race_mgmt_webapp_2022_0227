@@ -1,4 +1,4 @@
-fastapi
+fastapi<0.137.0
 uvicorn
 sqlalchemy
 asyncpg
@@ -11,3 +11,4 @@ psycopg2-binary
 PyJWT
 aiokafka
 prometheus-fastapi-instrumentator
+aiobreaker

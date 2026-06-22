@@ -1,0 +1,68 @@
+{% extends "base_email.html" %}
+
+{% block title %}Prijava potvrđena – {{ race_name }}{% endblock %}
+
+{% block status_color %}#22c55e{% endblock %}
+{% block callout_border %}#22c55e{% endblock %}
+{% block callout_bg %}#f0fdf4{% endblock %}
+{% block callout_label_color %}#16a34a{% endblock %}
+
+{% block extra_styles %}
+.bib-block {
+  border: 2px dashed #d1d5db;
+  border-radius: 2px;
+  padding: 20px 24px;
+  margin-bottom: 28px;
+  text-align: center;
+}
+.bib-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: #aaa;
+  margin-bottom: 10px;
+}
+.bib-number {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 48px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #0d0d0d;
+  line-height: 1;
+}
+.bib-sub {
+  font-size: 11px;
+  color: #bbb;
+  margin-top: 8px;
+  letter-spacing: 0.05em;
+}
+{% endblock %}
+
+{% block headline %}Vidimo se na startu! 🏁{% endblock %}
+
+{% block intro %}
+  Vaša uplata je uspešno obrađena. Zvanično ste prijavljeni na trku 
+  <strong>{{ race_name }}</strong>. U nastavku su svi detalji.
+{% endblock %}
+
+{% block callout_label %}✅ &nbsp;Registracija potvrđena{% endblock %}
+{% block callout_content %}
+  Sve je spremno! Ponesi ovaj mejl na dan trke ili zapamti 
+  svoj bib broj — to je vaša jedina identifikacija na stazi.
+{% endblock %}
+
+{% block extra_content %}
+<div class="bib-block">
+  <div class="bib-label">Vaš startni broj</div>
+  <div class="bib-number">{{ bib_number }}</div>
+  <div class="bib-sub">Bib · {{ race_name }}</div>
+</div>
+{% endblock %}
+
+{% block extra_rows %}
+<tr>
+  <td class="td-key">Bib broj</td>
+  <td class="td-val">{{ bib_number }}</td>
+</tr>
+{% endblock %}

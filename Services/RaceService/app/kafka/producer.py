@@ -25,17 +25,24 @@ async def stop_producer():
     if producer:
         await producer.stop()
 
-async def send_registration_created(registration: RegistrationResponse, amount: float):
+async def send_registration_created(
+    registration: RegistrationResponse,
+    amount: float,
+    participant_email: str,
+    participant_name: str,
+):
     message = registration.model_dump(mode="json")
-    message['amount'] = amount
+    message["amount"] = amount
+    message["participant_email"] = participant_email
+    message["participant_name"] = participant_name
     await producer.send_and_wait(
         "registration_created",
-        json.dumps(message).encode('utf-8')
+        json.dumps(message).encode("utf-8")
     )
 
 async def send_registration_deleted(registration_id: int):
     message = {"registration_id": registration_id}
     await producer.send_and_wait(
         "registration_deleted",
-        json.dumps(message).encode('utf-8')
+        json.dumps(message).encode("utf-8")
     )

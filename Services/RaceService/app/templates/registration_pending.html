@@ -1,0 +1,28 @@
+{% extends "base_email.html" %}
+
+{% block title %}Registracija primljena – {{ race_name }}{% endblock %}
+
+{% block status_color %}#f5a623{% endblock %}
+{% block callout_border %}#f5a623{% endblock %}
+{% block callout_bg %}#fffbf2{% endblock %}
+{% block callout_label_color %}#c8860a{% endblock %}
+
+{% block headline %}Registracija primljena.{% endblock %}
+
+{% block intro %}
+  Uspešno ste se prijavili na trku <strong>{{ race_name }}</strong>. 
+  Vaša registracija je evidentirana i čeka potvrdu uplate.
+{% endblock %}
+
+{% block callout_label %}⏳ &nbsp;Uplata na čekanju{% endblock %}
+{% block callout_content %}
+  Čim vaša uplata bude obrađena, dobićete mejl sa svim detaljima 
+  uključujući i vaš startni (bib) broj.
+{% endblock %}
+
+{% block extra_rows %}
+<tr>
+  <td class="td-key">Bib broj</td>
+  <td class="td-val muted">Dodeljuje se nakon uplate</td>
+</tr>
+{% endblock %}

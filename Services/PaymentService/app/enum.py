@@ -1,8 +1,7 @@
 # enum.py
 from enum import Enum
 
-class PaymentStatus(str, Enum):
+class PaymentStatusEnum(str, Enum):
     PENDING = "pending"
-    SUCCEEDED = "succeeded"
+    COMPLETED = "completed"
     FAILED = "failed"
-    REFUNDED = "refunded"

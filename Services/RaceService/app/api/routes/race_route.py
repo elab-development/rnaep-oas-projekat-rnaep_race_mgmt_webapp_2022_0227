@@ -11,6 +11,10 @@ race_router = APIRouter(prefix="/api/race", tags=["Races"])
 async def get_race(race_id: int, db: AsyncSession = Depends(get_db), _: dict = Depends(get_current_user)):
     return await race_service.get_race_by_id(db, race_id)
 
+@race_router.get("/", response_model=list[RaceResponse], status_code=status.HTTP_200_OK)
+async def get_races(db: AsyncSession = Depends(get_db)):
+    return await race_service.get_races(db)
+
 @race_router.post("/", response_model=RaceResponse, status_code=status.HTTP_201_CREATED)
 async def create_race(data: RaceCreate, db: AsyncSession = Depends(get_db), current_user: dict = Depends(require_organiser)):
     organiser_id = int(current_user["sub"])

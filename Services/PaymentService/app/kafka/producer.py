@@ -26,16 +26,14 @@ async def stop_producer():
     if producer:
         await producer.stop()
 
-async def send_payment_completed(payment: PaymentResponse):
+async def send_payment_completed(payment: PaymentResponse, participant_email: str, participant_name: str):
     message = payment.model_dump(mode="json")
-    await producer.send_and_wait(
-        "payment_completed",
-        json.dumps(message).encode('utf-8')
-    )
+    message["participant_email"] = participant_email
+    message["participant_name"] = participant_name
+    await producer.send_and_wait("payment_completed", json.dumps(message).encode('utf-8'))
 
-async def send_payment_failed(payment: PaymentResponse):
+async def send_payment_failed(payment: PaymentResponse, participant_email: str, participant_name: str):
     message = payment.model_dump(mode="json")
-    await producer.send_and_wait(
-        "payment_failed",
-        json.dumps(message).encode('utf-8')
-    )
+    message["participant_email"] = participant_email
+    message["participant_name"] = participant_name
+    await producer.send_and_wait("payment_failed", json.dumps(message).encode('utf-8'))
