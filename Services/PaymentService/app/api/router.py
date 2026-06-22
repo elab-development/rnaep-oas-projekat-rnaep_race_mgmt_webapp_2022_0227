@@ -7,6 +7,7 @@ from app.api.schema import PaymentCreate, PaymentResponse, CheckoutResponse
 
 router = APIRouter(prefix="/payments", tags=["payments"])
 
+
 @router.post("/checkout", response_model=CheckoutResponse)
 async def create_checkout(
     body: PaymentCreate,
@@ -14,9 +15,12 @@ async def create_checkout(
     current_user: dict = Depends(require_participant)
 ):
     user_id = int(current_user["sub"])
+    participant_email = current_user.get("email", "")
+    participant_name = current_user.get("username", "")
     return await service.create_checkout_session(
-        db, user_id, body.registration_id, body.amount
+        db, user_id, body.registration_id, body.amount, participant_email, participant_name
     )
+
 
 @router.get("/me", response_model=list[PaymentResponse])
 async def get_my_payments(
@@ -27,12 +31,16 @@ async def get_my_payments(
     payments = await service.get_payments_by_user_id(db, user_id)
     return [PaymentResponse.model_validate(p) for p in payments]
 
+
 @router.get("/{payment_id}", response_model=PaymentResponse)
 async def get_payment(
     payment_id: int,
     db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user), 
 ):
-    return await service.get_payment_by_id(db, payment_id)
+    user_id = int(current_user["sub"])
+    return await service.get_payment_by_id(db, payment_id, user_id)
+
 
 @router.post("/webhook")
 async def stripe_webhook(

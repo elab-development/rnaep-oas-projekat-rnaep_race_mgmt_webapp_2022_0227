@@ -21,7 +21,11 @@ async def get_my_registrations(db: AsyncSession = Depends(get_db), current_user:
 @registration_router.post("/", response_model=RegistrationResponse, status_code=status.HTTP_201_CREATED)
 async def create_registration(data: RegistrationCreate, db: AsyncSession = Depends(get_db), current_user: dict = Depends(require_participant)):
     participant_id = int(current_user["sub"])
-    return await registration_service.create_registration(db, participant_id, data)
+    participant_email = current_user.get("email", "")
+    participant_name = current_user.get("username", "")
+    return await registration_service.create_registration(
+    db, participant_id, data, participant_email, participant_name
+    )
 
 @registration_router.delete("/{registration_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_registration(registration_id: int, db: AsyncSession = Depends(get_db), current_user: dict = Depends(require_participant)):

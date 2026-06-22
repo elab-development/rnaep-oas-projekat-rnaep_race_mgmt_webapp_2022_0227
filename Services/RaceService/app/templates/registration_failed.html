@@ -1,0 +1,21 @@
+{% extends "base_email.html" %}
+
+{% block title %}Problem sa uplatom – {{ race_name }}{% endblock %}
+
+{% block status_color %}#ef4444{% endblock %}
+{% block callout_border %}#ef4444{% endblock %}
+{% block callout_bg %}#fef2f2{% endblock %}
+{% block callout_label_color %}#dc2626{% endblock %}
+
+{% block headline %}Uplata nije prošla.{% endblock %}
+
+{% block intro %}
+  Nažalost, nismo uspeli da obradimo vašu uplatu za trku 
+  <strong>{{ race_name }}</strong>. Vaša registracija je otkazana.
+{% endblock %}
+
+{% block callout_label %}❌ &nbsp;Uplata odbijena{% endblock %}
+{% block callout_content %}
+  Proverite detalje platne kartice i pokušajte ponovo. 
+  Ukoliko problem potraje, kontaktirajte svoju banku ili nas.
+{% endblock %}

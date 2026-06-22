@@ -54,7 +54,7 @@ async def get_registration_count_by_race(db, race_id):
     return result.scalar()
     
 async def create_registration(db: AsyncSession, participant_id: int, race_id: int, data: RegistrationCreate) -> Registration | None:
-    bib_number = ''.join(random.choices(string.digits, k=6))
+    bib_number = await generate_unique_bib_number(db, race_id)
     registration_model = Registration(
         participant_id=participant_id,
         race_id=race_id,
@@ -89,3 +89,22 @@ async def update_registration_payment_status(db: AsyncSession, registration_id: 
     except Exception as e:
         await db.rollback()
         raise e
+    
+
+# additional functions
+
+async def generate_unique_bib_number(db: AsyncSession, race_id: int, length: int = 6) -> str:
+    max_attempts = 10
+    for _ in range(max_attempts):
+        bib_number = ''.join(random.choices(string.digits, k=length))
+        result = await db.execute(
+            select(Registration).where(
+                and_(
+                    Registration.race_id == race_id,
+                    Registration.bib_number == bib_number
+                )
+            )
+        )
+        if result.scalar_one_or_none() is None:
+            return bib_number
+    raise ValueError("Error while generating bib_number!")
