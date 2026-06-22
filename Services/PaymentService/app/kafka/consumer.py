@@ -59,6 +59,7 @@ async def handle_registration_created(data: dict):
     await db.commit()
 
 
+
 async def handle_registration_deleted(data: dict):
     async with SessionLocal() as db:
         await delete_payment_by_registration_id(db, data["registration_id"])
