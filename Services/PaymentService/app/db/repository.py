@@ -23,6 +23,13 @@ async def get_payments_by_user_id(db: AsyncSession, user_id: int):
     return result.scalars().all()
 
 
+async def get_payment_by_registration_id(db: AsyncSession, registration_id: int):
+    result = await db.execute(
+        select(Payment).where(Payment.registration_id == registration_id)
+    )
+    return result.scalar_one_or_none()
+
+
 async def create_payment(
     db: AsyncSession,
     user_id: int,

@@ -3,7 +3,6 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pathlib import Path
 from app.config import settings
 
-# Jinja2 environment – ucitva template iz template dir-a
 _templates_dir = Path(__file__).parent.parent / "templates"
 _jinja_env = Environment(
     loader=FileSystemLoader(str(_templates_dir)),
@@ -59,7 +58,7 @@ async def send_registration_pending_email(
     )
     return await _send_email(
         to_email=to_email,
-        subject=f"Registracion recieved – {race_name}",
+        subject=f"Registration received – {race_name}",
         html_body=html,
     )
 

@@ -2,10 +2,12 @@ import json
 import asyncio
 from aiokafka import AIOKafkaConsumer
 from aiokafka.errors import KafkaConnectionError, GroupCoordinatorNotAvailableError
-from app.api.schema import PaymentCreate
 from app.config import settings
 from app.db.db import SessionLocal
 from app.service import create_checkout_session, delete_payment_by_registration_id
+
+consumer = None
+
 
 async def start_consumer():
     global consumer
@@ -37,10 +39,12 @@ async def start_consumer():
         except Exception as e:
             print(f"ERROR in Payment Service Consumer: {str(e)}")
 
+
 async def stop_consumer():
     global consumer
     if consumer:
         await consumer.stop()
+
 
 async def handle_registration_created(data: dict):
     async with SessionLocal() as db:
@@ -52,6 +56,7 @@ async def handle_registration_created(data: dict):
             participant_email=data["participant_email"],
             participant_name=data["participant_name"],
         )
+
 
 async def handle_registration_deleted(data: dict):
     async with SessionLocal() as db:

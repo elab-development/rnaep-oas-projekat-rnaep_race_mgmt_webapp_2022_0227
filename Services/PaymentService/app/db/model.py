@@ -11,7 +11,7 @@ class Payment(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(Integer, nullable=False)
-    registration_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    registration_id: Mapped[int] = mapped_column(Integer, nullable=False, unique=True)
     stripe_session_id: Mapped[str] = mapped_column(String, unique=True, nullable=False)
     status: Mapped[PaymentStatus] = mapped_column(
         SAEnum(PaymentStatus),

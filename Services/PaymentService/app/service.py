@@ -7,7 +7,7 @@ from app.config import settings
 from app.kafka.producer import send_payment_completed, send_payment_failed
 from app.enum import PaymentStatusEnum
 
-stripe.api_key = settings.stripe_secret_key
+stripe.api_key = settings.payment_secret_key.get_secret_value()
 
 
 async def create_checkout_session(
@@ -18,6 +18,10 @@ async def create_checkout_session(
     participant_email: str,
     participant_name: str,
 ) -> CheckoutResponse:
+    existing = await repository.get_payment_by_registration_id(db, registration_id)
+    if existing:
+        return CheckoutResponse(checkout_url=existing.checkout_url)
+
     try:
         session = stripe.checkout.Session.create(
             payment_method_types=["card"],
@@ -25,7 +29,7 @@ async def create_checkout_session(
                 "price_data": {
                     "currency": "eur",
                     "product_data": {"name": f"Registracija #{registration_id}"},
-                    "unit_amount": int(amount * 100),  
+                    "unit_amount": int(amount * 100),
                 },
                 "quantity": 1,
             }],
@@ -40,7 +44,7 @@ async def create_checkout_session(
     except stripe.StripeError as e:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Stripe greška: {e.user_message}"
+            detail=str(e)
         )
 
     payment = await repository.create_payment(
@@ -56,10 +60,12 @@ async def create_checkout_session(
     return CheckoutResponse(checkout_url=payment.checkout_url)
 
 
-async def get_payment_by_id(db: AsyncSession, payment_id: int) -> PaymentResponse:
+async def get_payment_by_id(db: AsyncSession, payment_id: int, user_id: int) -> PaymentResponse:
     payment = await repository.get_payment_by_id(db, payment_id)
     if not payment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found")
+    if payment.user_id != user_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")
     return PaymentResponse.model_validate(payment)
 
 
