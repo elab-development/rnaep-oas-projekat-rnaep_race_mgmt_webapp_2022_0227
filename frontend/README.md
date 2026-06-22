@@ -1,36 +1,82 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ObstaRace Frontend
 
-## Getting Started
+Vite + React + TypeScript SPA for the ObstaRace microservices platform.
 
-First, run the development server:
+## Prerequisites
+
+- Node.js 20+
+- Docker Compose stack running (`nginx`, `user-service`, `race-service`, `payment-service`) on port **80**
+
+## Setup
 
 ```bash
+cd frontend
+cp .env.example .env
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+App runs at `http://localhost:5173`. Vite dev server proxies API paths to `VITE_API_BASE_URL` (default `http://localhost:80`).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | Description |
+|---|---|
+| `VITE_API_BASE_URL` | Nginx gateway URL (production build / proxy target) |
 
-## Learn More
+## Scripts
 
-To learn more about Next.js, take a look at the following resources:
+- `npm run dev` — local development
+- `npm run build` — production bundle
+- `npm run preview` — preview production build
+- `npm run lint` — ESLint
+- `npm run format` — Prettier
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Auth
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Login uses `POST /api/users/auth/login`, which sets an **httponly** `access_token` cookie. The Axios client sends cookies via `withCredentials: true`. Session user data comes from `GET /api/users/me` on bootstrap and after login.
 
-## Deploy on Vercel
+## Payment return URLs
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Configure PaymentService env vars to point at the frontend:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `PAYMENT_SUCCESS_URL` → `http://localhost:5173/payment-success?registration_id=REG_ID&session_id={CHECKOUT_SESSION_ID}`
+- `PAYMENT_CANCEL_URL` → `http://localhost:5173/payment-failed?registration_id=REG_ID`
+
+Both pages use a 4-state UI (`loading` → `success` | `failed` | `timeout`). Polling stops automatically after ~25s; timeout shows an amber state with **Refresh status**.
+
+## API route coverage (UI)
+
+| Endpoint | UI entry point |
+|---|---|
+| `GET /api/race/` | Browse Races, Organiser Dashboard (client-filtered by `organiser_id`) |
+| `GET /api/race/{id}` | Race Detail, Edit Race |
+| `POST /api/race/` | Create Race form |
+| `PATCH /api/race/{id}` | Edit Race form |
+| `DELETE /api/race/{id}` | Organiser Dashboard / Edit Race delete modal |
+| `GET /api/registration/myregistrations` | My Registrations |
+| `GET /api/registration/?race_id=` | Organiser race registrations page |
+| `POST /api/registration/` | Register on Race Detail |
+| `DELETE /api/registration/{id}` | Cancel on My Registrations / payment-failed |
+| `POST /payments/checkout` | After register, retry payment flows |
+| `GET /payments/me` | My Payments, payment polling |
+| `GET /payments/{id}` | Payment polling |
+| `POST /api/users/auth/login` | Login page |
+| `POST /api/users/auth/register/*` | Register page (participant + organiser) |
+| `POST /api/users/auth/logout` | Navbar Logout |
+| `GET /api/users/me` | App bootstrap / auth store |
+
+## Race data
+
+Browse Races and Organiser Dashboard load exclusively from `GET /api/race/`. Race Detail loads from `GET /api/race/{id}`. Race queries use `staleTime: 0` so each visit refetches from the API. On failure, pages show an error state with toast + Retry — no silent fallbacks.
+
+## Known backend issues
+
+- **`RaceResponse` has no live registration count** — browse/detail pages show capacity only; spots remaining cannot be computed without an extra field or API.
+- **`RegistrationResponse` has no participant name** — organiser registration tables show `Participant #{id}` until the backend adds name fields.
+- **`PAYMENT_SUCCESS_URL` / `PAYMENT_CANCEL_URL` do not append query params in PaymentService code** — ops must include `registration_id` / `session_id` in the env URL template.
+- **Registration `payment_status` vs Payment record `status`** — different enums/services; UI labels match each source.
+
+## Nginx reminder
+
+Add `proxy_set_header Cookie $http_cookie;` to `/api/race/` and `/api/registration/` locations so JWT cookies reach RaceService.

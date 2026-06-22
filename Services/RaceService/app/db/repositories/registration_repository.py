@@ -19,7 +19,6 @@ async def get_registrations_by_race_id(db: AsyncSession, race_id: int) -> list[R
         select(Registration).where(
             and_(
                 Registration.race_id == race_id,
-                Registration.payment_status == PaymentStatusEnum.COMPLETED
             )
         )
     )
