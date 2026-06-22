@@ -5,6 +5,7 @@ from app.api.schema import PaymentResponse, CheckoutResponse
 from app.db import repository
 from app.config import settings
 from app.kafka.producer import send_payment_completed, send_payment_failed
+from app.enum import PaymentStatusEnum
 
 stripe.api_key = settings.stripe_secret_key
 
@@ -84,7 +85,7 @@ async def handle_webhook(db: AsyncSession, payload: bytes, stripe_signature: str
     session_id = event["data"]["object"].get("id")
 
     if event["type"] == "checkout.session.completed":
-        payment = await repository.update_payment_status(db, session_id, new_status="completed")
+        payment = await repository.update_payment_status(db, session_id, new_status=PaymentStatusEnum.COMPLETED)
         if payment:
             response = PaymentResponse.model_validate(payment)
             await send_payment_completed(
@@ -94,7 +95,7 @@ async def handle_webhook(db: AsyncSession, payload: bytes, stripe_signature: str
             )
 
     elif event["type"] == "checkout.session.expired":
-        payment = await repository.update_payment_status(db, session_id, new_status="failed")
+        payment = await repository.update_payment_status(db, session_id, new_status=PaymentStatusEnum.FAILED)
         if payment:
             response = PaymentResponse.model_validate(payment)
             await send_payment_failed(

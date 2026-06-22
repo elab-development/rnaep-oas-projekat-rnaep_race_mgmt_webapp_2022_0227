@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.db.model import Payment
-from app.enum import PaymentStatus
+from app.enum import PaymentStatusEnum as PaymentStatus
 
 
 async def get_payment_by_id(db: AsyncSession, payment_id: int):

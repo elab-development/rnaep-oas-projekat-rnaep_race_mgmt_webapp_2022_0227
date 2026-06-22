@@ -54,28 +54,28 @@ async def create_registration(
             db, participant_id, race.id, data
         )
         response = RegistrationResponse.model_validate(registration)
-        
-        await send_registration_created(
-            response,
-            float(race.price),
-            participant_email=participant_email,
-            participant_name=participant_name,
-        )
         await db.commit()
-
-        await send_registration_pending_email(
-            to_email=participant_email,
-            participant_name=participant_name,
-            race_name=race.name,
-            race_date=race.date_time.strftime("%d.%m.%Y. u %H:%M"),
-            race_location=race.location,
-            registration_id=response.id,
-        )
-
-        return response
     except Exception as e:
         await db.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    try:
+        await send_registration_created(
+            response, float(race.price),
+            participant_email=participant_email, participant_name=participant_name,
+        )
+    except Exception as e:
+        print(f"[Kafka] registration_created publish failed: {e}")
+
+    try:
+        await send_registration_pending_email(
+            to_email=participant_email, participant_name=participant_name,
+            race_name=race.name,
+            race_date=race.date_time.strftime("%d.%m.%Y. u %H:%M"),
+            race_location=race.location, registration_id=response.id,
+        )
+    except Exception as e:
+        print(f"[Email] pending email failed: {e}")
+    return response
 
 async def delete_registration(db: AsyncSession, registration_id: int, participant_id: int):
     registration = await registration_repository.get_registration_by_id(db, registration_id)
@@ -85,5 +85,10 @@ async def delete_registration(db: AsyncSession, registration_id: int, participan
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to delete this registration")
     if registration.payment_status == PaymentStatusEnum.COMPLETED:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Registration can't be canceled")
-    await send_registration_deleted(registration_id)
-    return await registration_repository.delete_registration(db, registration_id)
+    deleted = await registration_repository.delete_registration(db, registration_id)
+    if deleted:
+        try:
+            await send_registration_deleted(registration_id)
+        except Exception as e:
+            print(f"[Kafka] registration_deleted publish failed: {e}")
+    return deleted

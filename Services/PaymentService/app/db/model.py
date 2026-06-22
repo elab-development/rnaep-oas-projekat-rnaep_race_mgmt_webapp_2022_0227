@@ -3,7 +3,7 @@ from sqlalchemy import Integer, String, DateTime, Numeric
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.types import Enum as SAEnum
 from app.db.db import Base
-from app.enum import PaymentStatus
+from app.enum import PaymentStatusEnum as PaymentStatus
 
 
 class Payment(Base):

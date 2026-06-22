@@ -1,6 +1,6 @@
 from datetime import datetime
 from pydantic import BaseModel
-from app.enum import PaymentStatus
+from app.enum import PaymentStatusEnum as PaymentStatus
 
 class PaymentCreate(BaseModel):
     registration_id: int

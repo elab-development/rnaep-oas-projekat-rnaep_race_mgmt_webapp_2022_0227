@@ -14,8 +14,10 @@ async def create_checkout(
     current_user: dict = Depends(require_participant)
 ):
     user_id = int(current_user["sub"])
+    participant_email = current_user.get("email", "")
+    participant_name = current_user.get("username", "")
     return await service.create_checkout_session(
-        db, user_id, body.registration_id, body.amount
+        db, user_id, body.registration_id, body.amount, participant_email, participant_name
     )
 
 @router.get("/me", response_model=list[PaymentResponse])
