@@ -25,8 +25,36 @@ jobs:
       - run: npm run lint
         working-directory: frontend
 
+      - run: npm run test
+        working-directory: frontend
+
       - run: npm run build
         working-directory: frontend
+
+  backend-tests:
+    name: Test ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - service: user-service
+            context: Services/UserService
+          - service: race-service
+            context: Services/RaceService
+          - service: payment-service
+            context: Services/PaymentService
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r requirements-test.txt
+        working-directory: ${{ matrix.context }}
+
+      - run: python -m pytest -q
+        working-directory: ${{ matrix.context }}
 
   backend-ci:
     name: Build ${{ matrix.service }}
@@ -55,7 +83,7 @@ jobs:
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
-    needs: [frontend-ci, backend-ci]
+    needs: [frontend-ci, backend-ci, backend-tests]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
       - uses: actions/checkout@v4
