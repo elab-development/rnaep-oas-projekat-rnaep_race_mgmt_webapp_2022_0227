@@ -56,11 +56,8 @@ async def handle_registration_created(data: dict):
             participant_email=data["participant_email"],
             participant_name=data["participant_name"],
         )
-    await db.commit()
-
 
 
 async def handle_registration_deleted(data: dict):
     async with SessionLocal() as db:
         await delete_payment_by_registration_id(db, data["registration_id"])
-    await db.commit()
