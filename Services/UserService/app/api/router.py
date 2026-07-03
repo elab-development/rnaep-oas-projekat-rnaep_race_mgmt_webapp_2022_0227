@@ -42,5 +42,6 @@ user_router = APIRouter(prefix="/api/users", tags=["Users"])
 @user_router.get("/me")
 async def get_my_profile(request: Request, db: AsyncSession = Depends(get_db)):
     access_token = request.cookies.get("access_token")
-    user_id = verify_token(access_token) if access_token else None
+    payload = verify_token(access_token) if access_token else None
+    user_id = payload.get("sub") if payload else None
     return await service.get_me(db, user_id)

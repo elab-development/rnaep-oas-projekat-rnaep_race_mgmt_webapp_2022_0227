@@ -14,8 +14,10 @@ def test_verify_password_roundtrip():
 
 
 def test_create_and_verify_access_token_roundtrip():
-    token = create_access_token({"sub": "42"})
-    assert verify_token(token) == "42"
+    token = create_access_token({"sub": "42", "role": "participant"})
+    payload = verify_token(token)
+    assert payload["sub"] == "42"
+    assert payload["role"] == "participant"
 
 
 def test_verify_token_rejects_garbage():
