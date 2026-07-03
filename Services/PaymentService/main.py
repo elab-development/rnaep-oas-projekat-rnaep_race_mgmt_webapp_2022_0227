@@ -1,11 +1,14 @@
 import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from app.logging_config import configure_logging
 from app.kafka.consumer import start_consumer, stop_consumer
 from app.kafka.producer import start_producer, stop_producer
 from app.api import router
 from prometheus_fastapi_instrumentator import Instrumentator
 from middleware import add_security_middleware
+
+configure_logging()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
