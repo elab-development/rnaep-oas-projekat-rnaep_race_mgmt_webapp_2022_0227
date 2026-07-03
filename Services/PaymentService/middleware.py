@@ -6,8 +6,8 @@ def add_security_middleware(app: FastAPI):
         CORSMiddleware,
         allow_origins=["http://localhost:5173"],
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=["GET", "POST"],
+        allow_headers=["Content-Type", "Accept"],
     )
 
     @app.middleware("http")
