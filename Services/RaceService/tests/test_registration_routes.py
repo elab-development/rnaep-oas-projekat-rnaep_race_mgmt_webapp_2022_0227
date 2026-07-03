@@ -39,10 +39,9 @@ async def test_duplicate_registration_rejected(client, login_as):
     assert resp.status_code == 400
 
 
-async def test_pending_registrations_do_not_count_against_capacity(client, login_as):
-    # get_registration_count_by_race only counts COMPLETED registrations, so
-    # merely-pending (unpaid) signups don't currently trigger the "race is full"
-    # check, even past max_participants. This documents that actual behavior.
+async def test_registration_rejected_when_race_is_full(client, login_as):
+    # A pending (unpaid) registration still reserves a spot, so it must count
+    # toward capacity just like a completed one.
     race_id = await create_race(client, login_as, max_participants=1)
 
     login_as(PARTICIPANT)
@@ -51,10 +50,10 @@ async def test_pending_registrations_do_not_count_against_capacity(client, login
 
     login_as(OTHER_PARTICIPANT)
     second = await client.post("/api/registration/", json={"race_id": race_id})
-    assert second.status_code == 201
+    assert second.status_code == 400
 
 
-async def test_registration_rejected_when_race_is_full(client, login_as):
+async def test_failed_registration_frees_up_capacity(client, login_as):
     from app.enum import PaymentStatusEnum
     from app.db.repositories.registration_repository import update_registration_payment_status
     from tests.conftest import TestSessionLocal
@@ -66,11 +65,11 @@ async def test_registration_rejected_when_race_is_full(client, login_as):
     assert first.status_code == 201
 
     async with TestSessionLocal() as db:
-        await update_registration_payment_status(db, first.json()["id"], PaymentStatusEnum.COMPLETED)
+        await update_registration_payment_status(db, first.json()["id"], PaymentStatusEnum.FAILED)
 
     login_as(OTHER_PARTICIPANT)
     second = await client.post("/api/registration/", json={"race_id": race_id})
-    assert second.status_code == 400
+    assert second.status_code == 201
 
 
 async def test_registration_rejected_after_deadline(client, login_as):

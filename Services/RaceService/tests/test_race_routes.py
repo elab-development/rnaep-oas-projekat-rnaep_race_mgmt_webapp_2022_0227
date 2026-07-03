@@ -82,14 +82,33 @@ async def test_delete_race_without_registrations_succeeds(client, login_as):
     assert resp.status_code == 204
 
 
-async def test_delete_race_with_only_pending_registrations_is_allowed(client, login_as):
-    # get_registration_count_by_race only counts COMPLETED registrations, so a race
-    # with nobody having actually paid yet can still be deleted/cancelled.
+async def test_delete_race_with_pending_registration_is_blocked(client, login_as):
+    # A pending (unpaid) registration still reserves a spot, so deleting the race
+    # out from under it must be blocked just like a completed registration.
     race_id = await create_race(client, login_as)
 
     login_as(PARTICIPANT)
     reg_resp = await client.post("/api/registration/", json={"race_id": race_id})
     assert reg_resp.status_code == 201
+
+    login_as(ORGANISER)
+    resp = await client.delete(f"/api/race/{race_id}")
+    assert resp.status_code == 403
+
+
+async def test_delete_race_with_only_failed_registrations_is_allowed(client, login_as):
+    from app.enum import PaymentStatusEnum
+    from app.db.repositories.registration_repository import update_registration_payment_status
+    from tests.conftest import TestSessionLocal
+
+    race_id = await create_race(client, login_as)
+
+    login_as(PARTICIPANT)
+    reg_resp = await client.post("/api/registration/", json={"race_id": race_id})
+    registration_id = reg_resp.json()["id"]
+
+    async with TestSessionLocal() as db:
+        await update_registration_payment_status(db, registration_id, PaymentStatusEnum.FAILED)
 
     login_as(ORGANISER)
     resp = await client.delete(f"/api/race/{race_id}")
