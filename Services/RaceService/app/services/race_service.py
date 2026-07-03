@@ -13,8 +13,6 @@ async def get_race_by_id(db: AsyncSession, race_id: int):
 
 async def get_races(db: AsyncSession):
     races = await race_repository.get_races(db)
-    if not races:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Races not found")    
     return [RaceResponse.model_validate(race) for race in races]
 
 async def create_race(db: AsyncSession, data: RaceCreate, organiser_id: int):

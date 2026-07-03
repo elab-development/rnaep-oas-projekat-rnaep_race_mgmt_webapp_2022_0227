@@ -7,6 +7,12 @@ from tests.helpers import (
 )
 
 
+async def test_get_races_returns_empty_list_when_none_exist(client):
+    resp = await client.get("/api/race/")
+    assert resp.status_code == 200
+    assert resp.json() == []
+
+
 async def test_get_race_requires_authentication(client, login_as):
     race_id = await create_race(client, login_as)
 
