@@ -40,3 +40,14 @@ async def send_payment_failed(payment: PaymentResponse, participant_email: str, 
     message["participant_email"] = participant_email
     message["participant_name"] = participant_name
     await producer.send_and_wait("payment_failed", json.dumps(message).encode('utf-8'))
+
+async def send_payment_initiated(
+    registration_id: int, amount: float, participant_email: str, participant_name: str
+):
+    message = {
+        "registration_id": registration_id,
+        "amount": amount,
+        "participant_email": participant_email,
+        "participant_name": participant_name,
+    }
+    await producer.send_and_wait("payment_initiated", json.dumps(message).encode("utf-8"))

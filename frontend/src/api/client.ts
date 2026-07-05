@@ -1,5 +1,6 @@
 import axios, { type AxiosError } from "axios";
 import { ApiError, extractApiErrorMessage, type ApiErrorPayload } from "@/types/api";
+import { getCookie } from "@/utils/cookies";
 
 /**
  * NOTE: Real UserService sets an httponly `access_token` cookie on login.
@@ -14,6 +15,21 @@ export const apiClient = axios.create({
     Accept: "application/json",
     "Content-Type": "application/json",
   },
+});
+
+const CSRF_PROTECTED_METHODS = new Set(["post", "put", "patch", "delete"]);
+
+// Double-submit CSRF cookie: echo the (non-httpOnly) csrf_token cookie set at
+// login back as a header on state-changing requests, so the backend can
+// verify the request actually originated from this site.
+apiClient.interceptors.request.use((config) => {
+  if (config.method && CSRF_PROTECTED_METHODS.has(config.method)) {
+    const csrfToken = getCookie("csrf_token");
+    if (csrfToken) {
+      config.headers.set("X-CSRF-Token", csrfToken);
+    }
+  }
+  return config;
 });
 
 let onUnauthorized: (() => void) | null = null;

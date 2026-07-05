@@ -1,4 +1,7 @@
+from datetime import timedelta
+
 import stripe
+from aiobreaker import CircuitBreaker, CircuitBreakerError
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
 from app.api.schema import PaymentResponse, CheckoutResponse
@@ -8,6 +11,18 @@ from app.kafka.producer import send_payment_completed, send_payment_failed
 from app.enum import PaymentStatusEnum
 
 stripe.api_key = settings.payment_secret_key.get_secret_value()
+
+# Protects the rest of the system from a slow/unavailable Stripe: after 3
+# consecutive failures the breaker "opens" and fails fast for 30s (without
+# even calling Stripe), instead of letting every checkout request hang on a
+# timeout. Card declines and bad-request errors are the customer's fault, not
+# a sign Stripe itself is down, so they're excluded from tripping it.
+stripe_checkout_breaker = CircuitBreaker(
+    fail_max=3,
+    timeout_duration=timedelta(seconds=30),
+    exclude=[stripe.CardError, stripe.InvalidRequestError],
+    name="stripe-checkout",
+)
 
 
 async def create_checkout_session(
@@ -23,7 +38,8 @@ async def create_checkout_session(
         return CheckoutResponse(checkout_url=existing.checkout_url)
 
     try:
-        session = stripe.checkout.Session.create(
+        session = stripe_checkout_breaker.call(
+            stripe.checkout.Session.create,
             payment_method_types=["card"],
             line_items=[{
                 "price_data": {
@@ -40,6 +56,11 @@ async def create_checkout_session(
                 "registration_id": str(registration_id),
                 "user_id": str(user_id),
             },
+        )
+    except CircuitBreakerError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Payment provider is temporarily unavailable. Please try again shortly.",
         )
     except stripe.StripeError as e:
         raise HTTPException(

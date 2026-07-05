@@ -18,6 +18,7 @@ async def start_consumer():
     consumer = AIOKafkaConsumer(
         "payment_completed",
         "payment_failed",
+        "payment_initiated",
         bootstrap_servers=settings.kafka_bootstrap_servers,
         group_id="race_service_group"
     )
@@ -40,6 +41,8 @@ async def start_consumer():
                 await handle_payment_completed(data)
             elif msg.topic == "payment_failed":
                 await handle_payment_failed(data)
+            elif msg.topic == "payment_initiated":
+                await handle_payment_initiated(data)
         except Exception:
             logger.error("Consumer error while processing message", exc_info=True)
 
@@ -110,3 +113,11 @@ async def handle_payment_failed(data: dict):
                 "Skipped failure email for registration %s - no participant email in Kafka message.",
                 data["registration_id"],
             )
+
+
+async def handle_payment_initiated(data: dict):
+    logger.info(
+        "Payment initiated for registration %s (amount=%s) - awaiting checkout completion.",
+        data.get("registration_id"),
+        data.get("amount"),
+    )

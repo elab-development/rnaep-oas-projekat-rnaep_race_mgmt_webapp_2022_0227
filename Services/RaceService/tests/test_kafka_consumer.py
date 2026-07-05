@@ -85,3 +85,10 @@ async def test_handle_payment_completed_for_unknown_registration_is_a_noop(monke
     await consumer.handle_payment_completed({"registration_id": 999999})
 
     send_confirmed.assert_not_awaited()
+
+
+async def test_handle_payment_initiated_does_not_raise():
+    # This is the RaceService side of the hybrid PaymentService consumer+producer
+    # chain: PaymentService consumes registration_created and immediately
+    # publishes payment_initiated, which RaceService consumes here.
+    await consumer.handle_payment_initiated({"registration_id": 1, "amount": 25.0})

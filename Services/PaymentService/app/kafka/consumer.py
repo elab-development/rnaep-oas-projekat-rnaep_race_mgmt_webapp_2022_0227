@@ -6,6 +6,7 @@ from aiokafka.errors import KafkaConnectionError, GroupCoordinatorNotAvailableEr
 from app.config import settings
 from app.db.db import SessionLocal
 from app.service import create_checkout_session, delete_payment_by_registration_id
+from app.kafka.producer import send_payment_initiated
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +60,15 @@ async def handle_registration_created(data: dict):
             participant_email=data["participant_email"],
             participant_name=data["participant_name"],
         )
+    # Hybrid producer+consumer step: having just consumed registration_created
+    # and run the checkout-session business logic, immediately publish a new
+    # event so downstream services know a payment attempt is now in flight.
+    await send_payment_initiated(
+        registration_id=data["id"],
+        amount=data["amount"],
+        participant_email=data["participant_email"],
+        participant_name=data["participant_name"],
+    )
 
 
 async def handle_registration_deleted(data: dict):

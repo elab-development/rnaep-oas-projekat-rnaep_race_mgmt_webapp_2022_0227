@@ -1,4 +1,4 @@
-from unittest.mock import Mock
+from unittest.mock import AsyncMock, Mock
 from types import SimpleNamespace
 
 import pytest
@@ -18,6 +18,8 @@ async def test_handle_registration_created_creates_a_payment(monkeypatch):
         return_value=SimpleNamespace(id="cs_test_created", url="https://checkout.stripe.com/created")
     )
     monkeypatch.setattr("app.service.stripe.checkout.Session.create", create_mock)
+    send_payment_initiated = AsyncMock()
+    monkeypatch.setattr(consumer, "send_payment_initiated", send_payment_initiated)
 
     await consumer.handle_registration_created(
         {
@@ -34,6 +36,15 @@ async def test_handle_registration_created_creates_a_payment(monkeypatch):
         assert payment is not None
         assert payment.user_id == 10
         assert payment.checkout_url == "https://checkout.stripe.com/created"
+
+    # Hybrid consumer+producer chain: consuming registration_created should
+    # immediately publish payment_initiated once the checkout session exists.
+    send_payment_initiated.assert_awaited_once_with(
+        registration_id=1,
+        amount=25.0,
+        participant_email="p@example.com",
+        participant_name="Participant",
+    )
 
 
 async def test_handle_registration_deleted_removes_the_payment():

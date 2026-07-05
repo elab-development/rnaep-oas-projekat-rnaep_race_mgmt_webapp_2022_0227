@@ -51,5 +51,13 @@ async def _reset_database():
 @pytest_asyncio.fixture
 async def client():
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+    # Every mutating route now requires a matching csrf_token cookie + X-CSRF-Token
+    # header (double-submit CSRF check); use the same fixed value for both so all
+    # tests satisfy it by default without needing to log in first.
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test",
+        cookies={"csrf_token": "test-csrf-token"},
+        headers={"X-CSRF-Token": "test-csrf-token"},
+    ) as ac:
         yield ac

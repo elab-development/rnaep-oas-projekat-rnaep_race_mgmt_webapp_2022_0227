@@ -1,3 +1,7 @@
+from httpx import ASGITransport, AsyncClient
+
+from main import app
+
 PARTICIPANT_PAYLOAD = {
     "email": "runner@example.com",
     "first_name": "Ana",
@@ -98,15 +102,22 @@ async def test_get_me_returns_current_user_after_login(client):
     assert resp.json()["email"] == PARTICIPANT_PAYLOAD["email"]
 
 
-async def test_logout_clears_cookie(client):
-    await client.post("/api/users/auth/register/participant", json=PARTICIPANT_PAYLOAD)
-    await client.post(
-        "/api/users/auth/login",
-        json={"email": PARTICIPANT_PAYLOAD["email"], "password": PARTICIPANT_PAYLOAD["password"]},
-    )
+async def test_logout_clears_cookie():
+    # Uses its own client (rather than the shared fixture's pre-seeded csrf_token)
+    # so there's exactly one csrf_token cookie: the real one login just issued.
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        await ac.post("/api/users/auth/register/participant", json=PARTICIPANT_PAYLOAD)
+        login_resp = await ac.post(
+            "/api/users/auth/login",
+            json={"email": PARTICIPANT_PAYLOAD["email"], "password": PARTICIPANT_PAYLOAD["password"]},
+        )
 
-    resp = await client.post("/api/users/auth/logout")
-    assert resp.status_code == 200
+        fresh_csrf_token = login_resp.cookies.get("csrf_token")
+        resp = await ac.post(
+            "/api/users/auth/logout", headers={"X-CSRF-Token": fresh_csrf_token}
+        )
+        assert resp.status_code == 200
 
-    me_resp = await client.get("/api/users/me")
-    assert me_resp.status_code == 401
+        me_resp = await ac.get("/api/users/me")
+        assert me_resp.status_code == 401

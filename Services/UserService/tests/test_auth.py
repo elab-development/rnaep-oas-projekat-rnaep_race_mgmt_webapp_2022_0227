@@ -26,7 +26,13 @@ def test_verify_token_rejects_garbage():
 
 def test_verify_token_rejects_tampered_signature():
     token = create_access_token({"sub": "1"})
-    tampered = token[:-1] + ("a" if token[-1] != "a" else "b")
+    # Flip a character a few positions in from the end, not the very last one:
+    # base64url's final character can carry unused padding bits that some
+    # decoders ignore, so tampering only the last symbol is occasionally a
+    # no-op on the decoded bytes and makes this assertion flaky.
+    index = -10
+    flipped = "a" if token[index] != "a" else "b"
+    tampered = token[:index] + flipped + token[index + 1 :]
     assert verify_token(tampered) is None
 
 

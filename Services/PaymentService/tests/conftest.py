@@ -53,10 +53,30 @@ def _no_real_kafka(monkeypatch):
     monkeypatch.setattr("app.service.send_payment_failed", AsyncMock())
 
 
+@pytest.fixture(autouse=True)
+def _reset_circuit_breaker():
+    # stripe_checkout_breaker is a module-level singleton; without resetting it,
+    # a test that trips it would leave it open for every test that runs after.
+    from app.service import stripe_checkout_breaker
+
+    stripe_checkout_breaker.close()
+    yield
+    stripe_checkout_breaker.close()
+
+
 @pytest_asyncio.fixture
 async def client():
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+    # Every mutating route now requires a matching csrf_token cookie + X-CSRF-Token
+    # header (double-submit CSRF check); use the same fixed value for both so all
+    # tests satisfy it by default. /payments/webhook is exempt (Stripe calls it
+    # server-to-server, with no browser cookies involved).
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test",
+        cookies={"csrf_token": "test-csrf-token"},
+        headers={"X-CSRF-Token": "test-csrf-token"},
+    ) as ac:
         yield ac
 
 
