@@ -36,6 +36,51 @@ async def test_get_race_returns_race_when_authenticated(client, login_as):
     assert resp.json()["id"] == race_id
 
 
+async def test_get_race_weather_requires_authentication(client, login_as):
+    race_id = await create_race(client, login_as)
+
+    login_as(None)
+    resp = await client.get(f"/api/race/{race_id}/weather")
+    assert resp.status_code == 401
+
+
+async def test_get_race_weather_returns_404_for_unknown_race(client, login_as):
+    login_as(PARTICIPANT)
+    resp = await client.get("/api/race/999/weather")
+    assert resp.status_code == 404
+
+
+async def test_get_race_weather_returns_forecast(client, login_as, monkeypatch):
+    from unittest.mock import AsyncMock
+
+    from app.services import race_service
+
+    monkeypatch.setattr(
+        race_service.weather_service,
+        "get_race_day_weather",
+        AsyncMock(
+            return_value={
+                "available": True,
+                "date": "2026-01-01",
+                "location": "Belgrade",
+                "temperature_max_c": 20.0,
+                "temperature_min_c": 10.0,
+                "precipitation_probability_percent": 15,
+                "weather_description": "Mostly clear",
+            }
+        ),
+    )
+
+    race_id = await create_race(client, login_as)
+    login_as(PARTICIPANT)
+    resp = await client.get(f"/api/race/{race_id}/weather")
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["available"] is True
+    assert body["weather_description"] == "Mostly clear"
+
+
 async def test_create_race_requires_organiser_role(client, login_as):
     login_as(PARTICIPANT)
     resp = await client.post("/api/race/", json=make_race_payload())

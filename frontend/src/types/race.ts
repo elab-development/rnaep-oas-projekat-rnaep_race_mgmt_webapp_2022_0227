@@ -39,3 +39,14 @@ export interface RaceUpdate {
   status?: RaceStatus;
   price?: number;
 }
+
+export interface WeatherForecast {
+  available: boolean;
+  reason?: string | null;
+  date?: string | null;
+  location?: string | null;
+  temperature_max_c?: number | null;
+  temperature_min_c?: number | null;
+  precipitation_probability_percent?: number | null;
+  weather_description?: string | null;
+}
