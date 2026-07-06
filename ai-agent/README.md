@@ -107,8 +107,8 @@ python main.py
 ```
 
 Agent će prvo pitati: `Unesite naziv trke:` — ukuca se (deo) naziva postojeće trke
-(npr. `Weather Test Race`), a ako takva trka ne postoji, agent samo ponovo postavlja
-isto pitanje.
+(npr. `Weather Test Race`), a ako takva trka ne postoji, agent ispiše listu postojećih
+trka iz baze (kao podsetnik šta se može ukucati) i ponovo postavlja isto pitanje.
 
 ## Primer korišćenja (stvarno pokrenuto, pravi izlaz)
 
@@ -119,7 +119,16 @@ pokrenute `race_db` baze i lokalno instaliranog Ollama servera (model `llama3.2`
 ```
 $ python main.py
 Unesite naziv trke: Nepostojeca Trka Xyz
-Trka 'Nepostojeca Trka Xyz' nije pronađena. Pokušajte ponovo.
+Trka 'Nepostojeca Trka Xyz' nije pronađena.
+Postojeće trke:
+  - Beogradski maraton
+  - Friendship Race
+  - FON RACE
+  - Umljanska trka
+  - Summertime Vibes Race
+  - TMNT Race
+  - Weather Test Race
+Pokušajte ponovo.
 
 Unesite naziv trke: Weather Test Race
 
