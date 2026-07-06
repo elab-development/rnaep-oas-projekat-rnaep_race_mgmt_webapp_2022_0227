@@ -46,7 +46,10 @@ def _banner() -> None:
     line = "=" * 50
     print(f"{_Style.BOLD}{_Style.CYAN}{line}")
     print("  ObstaRace — Race Day Briefing Agent")
-    print(f"{line}{_Style.RESET}\n", flush=True)
+    print(f"{line}{_Style.RESET}")
+    print("Zdravo! Ja sam Race Day Briefing Agent, AI asistent za ObstaRace.")
+    print("Pomažem organizatorima trka tako što na osnovu podataka o trci i")
+    print("vremenskoj prognozi generišem kratak izveštaj pred sam dan trke.\n", flush=True)
 
 
 def _weather_summary_text(location: str, date_str: str) -> str:
