@@ -110,3 +110,17 @@ def fetch_race_snapshot_by_name(name: str) -> RaceSnapshot:
             return _build_snapshot(conn, race_row)
     finally:
         engine.dispose()
+
+
+def list_race_names(limit: int = 15) -> list[str]:
+    """Existing race names (most recent first), used as a hint when a name lookup fails."""
+    engine = create_engine(config.race_database_url)
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(
+                text("SELECT name FROM races ORDER BY date_time DESC LIMIT :limit"),
+                {"limit": limit},
+            ).all()
+            return [row[0] for row in rows]
+    finally:
+        engine.dispose()
