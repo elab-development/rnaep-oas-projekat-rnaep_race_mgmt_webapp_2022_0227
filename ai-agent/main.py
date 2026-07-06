@@ -7,6 +7,13 @@ Usage:
 import argparse
 import sys
 
+# Windows' cmd.exe/PowerShell default console codepage (cp1252/cp852) can't encode
+# Serbian diacritics (č, ć, š, ž, đ) used throughout this agent's Serbian output;
+# force UTF-8 on stdout/stderr so printing never crashes regardless of the console.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
+
 from agent.briefing_agent import UnsupportedProviderError, generate_briefing
 from data.race_data import RaceNotFoundError, fetch_race_snapshot
 from output.formatter import save_briefing
