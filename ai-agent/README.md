@@ -7,7 +7,8 @@ podataka o trci i vremenskoj prognozi.
 
 ## Šta radi
 
-1. Korisnik unese ID trke preko komandne linije (`--race-id`).
+1. Agent pita korisnika za naziv trke (interaktivno, preko terminala). Ako trka sa
+   tim nazivom ne postoji u bazi, ponovo traži unos dok se ne pronađe postojeća trka.
 2. Agent povlači stvarne podatke o toj trci direktno iz **RaceService PostgreSQL
    baze** (kapacitet, broj prijava po statusu plaćanja).
 3. Agent povlači vremensku prognozu za lokaciju i datum trke preko **Open-Meteo**
@@ -70,7 +71,8 @@ Provajder se bira preko `.env` promenljive `LLM_PROVIDER`:
 
 Aplikacija hvata i jasno prijavljuje (bez pada, exit kod 1):
 
-- Nepostojeći ID trke (`RaceNotFoundError`).
+- Nepostojeći naziv trke (`RaceNotFoundError`) — korisnik se samo ponovo pita za naziv,
+  aplikacija se ne prekida.
 - Nedostupnu bazu podataka.
 - Nedostupnu ili van-opsega vremensku prognozu (agent nastavlja dalje sa porukom
   "Not available", ne prekida rad).
@@ -101,37 +103,42 @@ docker compose up -d race-db
 
 ```bash
 cd ai-agent
-python main.py --race-id 3
+python main.py
 ```
+
+Agent će prvo pitati: `Unesite naziv trke:` — ukuca se (deo) naziva postojeće trke
+(npr. `Weather Test Race`), a ako takva trka ne postoji, agent samo ponovo postavlja
+isto pitanje.
 
 ## Primer korišćenja (stvarno pokrenuto, pravi izlaz)
 
 Ispod je stvaran, neizmenjen izlaz agenta, dobijen pokretanjem protiv stvarno
 pokrenute `race_db` baze i lokalno instaliranog Ollama servera (model `llama3.2`,
-`LLM_PROVIDER=ollama`):
+`LLM_PROVIDER=ollama`) — uključujući pokušaj sa nepostojećim nazivom trke:
 
 ```
-$ python main.py --race-id 3
+$ python main.py
+Unesite naziv trke: Nepostojeca Trka Xyz
+Trka 'Nepostojeca Trka Xyz' nije pronađena. Pokušajte ponovo.
+
+Unesite naziv trke: Weather Test Race
 
 ## Summary
-The Weather Test Race is scheduled for July 7th, 2026, at 10:00 AM in Belgrade.
+The Weather Test Race is scheduled to take place on July 7th, 2026, at 10:00 AM in Belgrade.
 
 ## Capacity Status
-No capacity risk as confirmed registrations (completed + pending) are below
-5% of max_participants (10).
+**No capacity risk**: Completed registrations are 0, and pending registrations are 0, which is well below the maximum capacity of 10 participants (0.0% utilization).
 
 ## Weather Advisory
-Weather conditions will be overcast with a temperature range of 21.2-31.0C
-and a 6% chance of precipitation. No weather risk is currently indicated.
+**Weather conditions are favorable**: The weather forecast indicates an overcast sky with a temperature range of 21.2-31.0C and only a 6% chance of precipitation.
 
 ## Recommended Actions
-* Monitor the weather forecast closely on race day to ensure accurate predictions.
-* Review the registration status one last time before the start of the race to
-  confirm all participants are accounted for.
-* Ensure that all necessary safety measures are in place and ready for the
-  start of the race.
+* Review the race course to ensure it is suitable for all participants.
+* Confirm the start time and schedule with all participants and officials.
+* Prepare necessary equipment and supplies, including first aid kits and water stations.
+* Ensure that all obstacles are set up and ready for use.
 
-Saved to: output\reports\race-3-Weather-Test-Race-20260706-214553.md
+Saved to: output\reports\race-3-Weather-Test-Race-20260706-225303.md
 ```
 
 Ovo potvrđuje da ceo lanac — baza → prognoza → strukturisan prompt → LLM → formatiran
