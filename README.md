@@ -17,33 +17,38 @@ Svaki servis poseduje sopstvenu bazu i ne pristupa direktno podacima drugih serv
 
 ## Kafka komunikacija
 
-| Topic                  | Producer        | Consumer        |
-| ---------------------- | --------------- | --------------- |
-| `registration_created` | Race Service    | Payment Service |
-| `registration_deleted` | Race Service    | Payment Service |
-| `payment_completed`    | Payment Service | Race Service    |
-| `payment_failed`       | Payment Service | Race Service    |
+| Topic                  | Producer        | Consumer                        |
+| ---------------------- | --------------- | -------------------------------- |
+| `registration_created` | Race Service    | Payment Service                  |
+| `registration_deleted` | Race Service    | Payment Service                  |
+| `payment_initiated`    | Payment Service | Race Service                     |
+| `payment_completed`    | Payment Service | Race Service                     |
+| `payment_failed`       | Payment Service | Race Service                     |
+
+Payment Service je **hibridni modul** — konzumuje `registration_created`, izvršava poslovnu logiku (kreira Stripe checkout sesiju) i u istom toku odmah publikuje `payment_initiated`, čime i konzumuje i producira događaje u istom lancu obrade.
 
 ## Tok registracije
 
 1. Korisnik kreira prijavu za trku.
 2. Race Service proverava uslove i kreira registraciju sa statusom `pending`.
 3. Nakon uspešnog upisa emituje se događaj `registration_created`.
-4. Payment Service kreira Stripe checkout sesiju.
+4. Payment Service konzumuje taj događaj, kreira Stripe checkout sesiju i odmah publikuje `payment_initiated`.
 5. Nakon plaćanja Stripe šalje webhook.
 6. Payment Service emituje događaj o uspešnom ili neuspešnom plaćanju.
 7. Race Service ažurira status prijave i šalje odgovarajući mejl korisniku.
 
 ## Primenjeni obrasci
 
-Implementiran je koreografski **Saga pattern**. Konzistentnost sistema održava se pomoću lokalnih transakcija i Kafka događaja između servisa.
+* **Saga pattern** (koreografski) — konzistentnost sistema kroz tri odvojene baze održava se pomoću lokalnih transakcija i Kafka događaja između servisa, bez centralnog orkestratora ili distribuirane transakcije.
+* **Circuit Breaker** — poziv ka Stripe API-ju u Payment Service-u je zaštićen `aiobreaker` prekidačem (3 uzastopna neuspeha otvaraju prekidač na 30s). Kada je prekidač otvoren, zahtevi odmah dobijaju `503` bez čekanja na Stripe, umesto da se gomilaju spori/hung pozivi. Greške vezane za samu karticu (`CardError`, `InvalidRequestError`) su namerno isključene iz brojanja, pošto to nije znak da je Stripe nedostupan.
 
 ## Bezbednost
 
-* XSS zaštita pomoću CSP i sigurnosnih HTTP zaglavlja.
+* XSS zaštita pomoću CSP i sigurnosnih HTTP zaglavlja; React po defaultu eskejpuje sav sadržaj koji renderuje.
 * JWT tokeni u `httpOnly` kolačićima.
+* **CSRF zaštita** — double-submit cookie: pri loginu se postavlja dodatni, JS-čitljivi `csrf_token` kolačić; frontend ga vraća kao `X-CSRF-Token` header na svaki state-changing zahtev (POST/PUT/PATCH/DELETE), a svaki servis proverava da se header i kolačić poklapaju pre nego što obradi zahtev.
 * Provera vlasništva nad resursima radi sprečavanja IDOR napada.
-* Ograničen CORS pristup samo frontend aplikaciji.
+* Ograničen CORS pristup samo frontend aplikaciji, sa metodama/headerima svedenim na ono što se stvarno koristi.
 * SQLAlchemy ORM i parametrizovani upiti za zaštitu od SQL Injection napada.
 
 ## Monitoring

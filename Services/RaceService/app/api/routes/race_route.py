@@ -3,13 +3,17 @@ from fastapi import APIRouter, Depends, status
 from app.core.dependencies import get_current_user, require_organiser
 from app.db.db import get_db
 from app.services import race_service
-from app.api.schema import RaceCreate, RaceResponse, RaceUpdate
+from app.api.schema import RaceCreate, RaceResponse, RaceUpdate, WeatherForecast
 
 race_router = APIRouter(prefix="/api/race", tags=["Races"])
 
 @race_router.get("/{race_id}", response_model=RaceResponse, status_code=status.HTTP_200_OK)
 async def get_race(race_id: int, db: AsyncSession = Depends(get_db), _: dict = Depends(get_current_user)):
     return await race_service.get_race_by_id(db, race_id)
+
+@race_router.get("/{race_id}/weather", response_model=WeatherForecast, status_code=status.HTTP_200_OK)
+async def get_race_weather(race_id: int, db: AsyncSession = Depends(get_db), _: dict = Depends(get_current_user)):
+    return await race_service.get_race_weather(db, race_id)
 
 @race_router.get("/", response_model=list[RaceResponse], status_code=status.HTTP_200_OK)
 async def get_races(db: AsyncSession = Depends(get_db)):

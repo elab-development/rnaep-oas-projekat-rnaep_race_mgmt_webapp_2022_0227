@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { RaceWeatherPanel } from "@/components/races/RaceWeatherPanel";
 import { useCreateCheckout } from "@/features/payments/hooks";
 import { registrationCreateSchema } from "@/features/registrations/schemas";
 import { useCreateRegistration, useMyRegistrations } from "@/features/registrations/hooks";
@@ -171,6 +172,8 @@ export function RaceDetailPage() {
             <dd className="font-semibold text-brand">${race.price.toFixed(2)}</dd>
           </div>
         </dl>
+
+        <RaceWeatherPanel raceId={race.id} />
 
         <div className="mt-8 border-t-2 border-slate-100 pt-6">
           {isOrganiser ? (

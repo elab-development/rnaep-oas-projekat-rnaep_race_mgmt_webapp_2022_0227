@@ -1,7 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
-from app.api.schema import RaceCreate, RaceResponse, RaceUpdate
+from app.api.schema import RaceCreate, RaceResponse, RaceUpdate, WeatherForecast
 from app.db.repositories import race_repository, registration_repository
+from app.services import weather_service
 
 
 # Service functions for Race
@@ -11,10 +12,15 @@ async def get_race_by_id(db: AsyncSession, race_id: int):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Race not found")
     return RaceResponse.model_validate(race)
 
+async def get_race_weather(db: AsyncSession, race_id: int) -> WeatherForecast:
+    race = await race_repository.get_race_by_id(db, race_id)
+    if not race:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Race not found")
+    forecast = await weather_service.get_race_day_weather(race.location, race.date_time)
+    return WeatherForecast(**forecast)
+
 async def get_races(db: AsyncSession):
     races = await race_repository.get_races(db)
-    if not races:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Races not found")    
     return [RaceResponse.model_validate(race) for race in races]
 
 async def create_race(db: AsyncSession, data: RaceCreate, organiser_id: int):

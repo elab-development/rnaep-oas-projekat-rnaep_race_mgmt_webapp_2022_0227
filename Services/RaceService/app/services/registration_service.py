@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
@@ -7,6 +8,8 @@ from app.enum import RaceStatusEnum, PaymentStatusEnum
 from app.api.schema import RegistrationCreate, RegistrationResponse
 from app.db.repositories import registration_repository
 from app.services.email_service import send_registration_pending_email
+
+logger = logging.getLogger(__name__)
 
 
 async def get_registrations_by_race_id(db: AsyncSession, race_id, organiser_id):
@@ -63,8 +66,8 @@ async def create_registration(
             response, float(race.price),
             participant_email=participant_email, participant_name=participant_name,
         )
-    except Exception as e:
-        print(f"[Kafka] registration_created publish failed: {e}")
+    except Exception:
+        logger.error("Kafka registration_created publish failed", exc_info=True)
 
     try:
         await send_registration_pending_email(
@@ -73,8 +76,8 @@ async def create_registration(
             race_date=race.date_time.strftime("%d.%m.%Y. u %H:%M"),
             race_location=race.location, registration_id=response.id,
         )
-    except Exception as e:
-        print(f"[Email] pending email failed: {e}")
+    except Exception:
+        logger.error("Pending-registration email failed", exc_info=True)
     return response
 
 async def delete_registration(db: AsyncSession, registration_id: int, participant_id: int):
@@ -89,6 +92,6 @@ async def delete_registration(db: AsyncSession, registration_id: int, participan
     if deleted:
         try:
             await send_registration_deleted(registration_id)
-        except Exception as e:
-            print(f"[Kafka] registration_deleted publish failed: {e}")
+        except Exception:
+            logger.error("Kafka registration_deleted publish failed", exc_info=True)
     return deleted

@@ -1,10 +1,14 @@
 import json
 import asyncio
+import logging
 from aiokafka import AIOKafkaConsumer
 from aiokafka.errors import KafkaConnectionError, GroupCoordinatorNotAvailableError
 from app.config import settings
 from app.db.db import SessionLocal
 from app.service import create_checkout_session, delete_payment_by_registration_id
+from app.kafka.producer import send_payment_initiated
+
+logger = logging.getLogger(__name__)
 
 consumer = None
 
@@ -20,24 +24,24 @@ async def start_consumer():
 
     while True:
         try:
-            print("Payment Service: Attempting to connect Consumer to Kafka...")
+            logger.info("Attempting to connect Consumer to Kafka...")
             await consumer.start()
-            print("Payment Service: Consumer successfully connected to Kafka!")
+            logger.info("Consumer successfully connected to Kafka!")
             break
         except (KafkaConnectionError, GroupCoordinatorNotAvailableError) as e:
-            print(f"Payment Service: Kafka is not ready ({e}). Retrying in 3 seconds...")
+            logger.warning("Kafka is not ready (%s). Retrying in 3 seconds...", e)
             await asyncio.sleep(3)
 
     async for msg in consumer:
         try:
             data = json.loads(msg.value.decode("utf-8"))
-            print(f"Payment Service: Accepted message from Kafka -> {data}")
+            logger.info("Accepted message from Kafka -> %s", data)
             if msg.topic == "registration_created":
                 await handle_registration_created(data)
             elif msg.topic == "registration_deleted":
                 await handle_registration_deleted(data)
-        except Exception as e:
-            print(f"ERROR in Payment Service Consumer: {str(e)}")
+        except Exception:
+            logger.error("Consumer error while processing message", exc_info=True)
 
 
 async def stop_consumer():
@@ -56,11 +60,17 @@ async def handle_registration_created(data: dict):
             participant_email=data["participant_email"],
             participant_name=data["participant_name"],
         )
-    await db.commit()
-
+    # Hybrid producer+consumer step: having just consumed registration_created
+    # and run the checkout-session business logic, immediately publish a new
+    # event so downstream services know a payment attempt is now in flight.
+    await send_payment_initiated(
+        registration_id=data["id"],
+        amount=data["amount"],
+        participant_email=data["participant_email"],
+        participant_name=data["participant_name"],
+    )
 
 
 async def handle_registration_deleted(data: dict):
     async with SessionLocal() as db:
         await delete_payment_by_registration_id(db, data["registration_id"])
-    await db.commit()

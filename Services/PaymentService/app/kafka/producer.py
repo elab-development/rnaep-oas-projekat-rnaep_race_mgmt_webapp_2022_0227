@@ -1,25 +1,28 @@
 import json
 import asyncio
+import logging
 from aiokafka import AIOKafkaProducer
 from aiokafka.errors import GroupCoordinatorNotAvailableError, KafkaConnectionError
 from app.config import settings
 from app.api.schema import PaymentResponse
+
+logger = logging.getLogger(__name__)
 
 producer = None
 
 async def start_producer():
     global producer
     producer = AIOKafkaProducer(bootstrap_servers=settings.kafka_bootstrap_servers)
-    
+
     while True:
         try:
-            print("Payment Service: Attempting to connect Producer to Kafka...")
+            logger.info("Attempting to connect Producer to Kafka...")
             await producer.start()
-            print("Payment Service: Producer successfully connected to Kafka!")
+            logger.info("Producer successfully connected to Kafka!")
             break
         except (KafkaConnectionError, GroupCoordinatorNotAvailableError) as e:
-            print(f"Payment Service: Producer backup/retry due to: {e}")
-            await asyncio.sleep(3)  
+            logger.warning("Producer backoff/retry due to: %s", e)
+            await asyncio.sleep(3)
 
 async def stop_producer():
     global producer
@@ -37,3 +40,14 @@ async def send_payment_failed(payment: PaymentResponse, participant_email: str, 
     message["participant_email"] = participant_email
     message["participant_name"] = participant_name
     await producer.send_and_wait("payment_failed", json.dumps(message).encode('utf-8'))
+
+async def send_payment_initiated(
+    registration_id: int, amount: float, participant_email: str, participant_name: str
+):
+    message = {
+        "registration_id": registration_id,
+        "amount": amount,
+        "participant_email": participant_email,
+        "participant_name": participant_name,
+    }
+    await producer.send_and_wait("payment_initiated", json.dumps(message).encode("utf-8"))

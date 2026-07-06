@@ -1,3 +1,5 @@
+import secrets
+
 from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import status
@@ -29,12 +31,25 @@ async def login(data: LoginRequest, response: Response ,db: AsyncSession = Depen
         samesite="lax",
         max_age=60 * 60 * 24 * settings.access_token_expire_days
     )
+    # Double-submit CSRF cookie: deliberately NOT httponly, so the frontend can
+    # read it and echo it back as the X-CSRF-Token header on state-changing
+    # requests. An attacker's cross-site page can't read this cookie (browser
+    # same-origin policy), so it can't forge the matching header.
+    response.set_cookie(
+        key="csrf_token",
+        value=secrets.token_urlsafe(32),
+        httponly=False,
+        secure=settings.ENVIRONMENT == "production",
+        samesite="lax",
+        max_age=60 * 60 * 24 * settings.access_token_expire_days
+    )
     return {"message": "Login successful"}
 
 
 @auth_router.post("/logout")
 async def logout(response: Response):
     response.delete_cookie(key="access_token")
+    response.delete_cookie(key="csrf_token")
     return {"message": "Logout successful"}
 
 #CLASSIC USER ROUTES#
@@ -42,5 +57,6 @@ user_router = APIRouter(prefix="/api/users", tags=["Users"])
 @user_router.get("/me")
 async def get_my_profile(request: Request, db: AsyncSession = Depends(get_db)):
     access_token = request.cookies.get("access_token")
-    user_id = verify_token(access_token) if access_token else None
+    payload = verify_token(access_token) if access_token else None
+    user_id = payload.get("sub") if payload else None
     return await service.get_me(db, user_id)

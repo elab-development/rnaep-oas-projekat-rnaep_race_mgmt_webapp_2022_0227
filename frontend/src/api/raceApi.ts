@@ -1,5 +1,5 @@
 import { apiClient } from "./client";
-import type { Race, RaceCreate, RaceUpdate } from "@/types/race";
+import type { Race, RaceCreate, RaceUpdate, WeatherForecast } from "@/types/race";
 
 export const raceApi = {
   async list(): Promise<Race[]> {
@@ -9,6 +9,10 @@ export const raceApi = {
 
   getById(raceId: number) {
     return apiClient.get<Race>(`/api/race/${raceId}`);
+  },
+
+  getWeather(raceId: number) {
+    return apiClient.get<WeatherForecast>(`/api/race/${raceId}/weather`);
   },
 
   create(payload: RaceCreate) {
