@@ -1,8 +1,13 @@
 # Virtual Environments
 venv/
 .venv/
+.venv-test/
 env/
 .env/
+
+# Scratch files from local test runs
+requirements.local.txt
+requirements-test.local.txt
 
 # Sensitive Info
 .env
