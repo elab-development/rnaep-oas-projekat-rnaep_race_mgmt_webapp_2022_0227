@@ -19,6 +19,9 @@ podataka o trci i vremenskoj prognozi.
    Status**, **Weather Advisory**, **Recommended Actions**.
 6. Izveštaj se ispisuje u terminalu i čuva kao `.md` fajl.
 
+Terminalski interfejs je stilizovan (naslovni banner, kratak pozdrav agenta, obojeni
+prompt/status poruke) radi jasnije prezentacije uživo.
+
 ## Arhitektura / struktura projekta
 
 ```
@@ -118,7 +121,14 @@ pokrenute `race_db` baze i lokalno instaliranog Ollama servera (model `llama3.2`
 
 ```
 $ python main.py
-Unesite naziv trke: Nepostojeca Trka Xyz
+==================================================
+  ObstaRace — Race Day Briefing Agent
+==================================================
+Zdravo! Ja sam Race Day Briefing Agent, AI asistent za ObstaRace.
+Pomažem organizatorima trka tako što na osnovu podataka o trci i
+vremenskoj prognozi generišem kratak izveštaj pred sam dan trke.
+
+> Unesite naziv trke: Nepostojeca Trka Xyz
 Trka 'Nepostojeca Trka Xyz' nije pronađena.
 Postojeće trke:
   - Beogradski maraton
@@ -130,24 +140,26 @@ Postojeće trke:
   - Weather Test Race
 Pokušajte ponovo.
 
-Unesite naziv trke: Weather Test Race
+> Unesite naziv trke: Weather Test Race
+✓ Pronađena trka: Weather Test Race (#3) — Belgrade
 
+Generišem AI izveštaj...
+--------------------------------------------------
 ## Summary
-The Weather Test Race is scheduled to take place on July 7th, 2026, at 10:00 AM in Belgrade.
+The Weather Test Race is scheduled for July 7th, 2026, at 10:00 AM in Belgrade.
 
 ## Capacity Status
-**No capacity risk**: Completed registrations are 0, and pending registrations are 0, which is well below the maximum capacity of 10 participants (0.0% utilization).
+No capacity concerns as the confirmed registration count (0 completed + 0 pending) is well below the maximum capacity of 10 participants.
 
 ## Weather Advisory
-**Weather conditions are favorable**: The weather forecast indicates an overcast sky with a temperature range of 21.2-31.0C and only a 6% chance of precipitation.
+No weather risk indicators are present. Temperature conditions (21.2-31.0C) and precipitation probability (2%) do not pose any significant challenges for the event.
 
 ## Recommended Actions
-* Review the race course to ensure it is suitable for all participants.
-* Confirm the start time and schedule with all participants and officials.
-* Prepare necessary equipment and supplies, including first aid kits and water stations.
-* Ensure that all obstacles are set up and ready for use.
-
-Saved to: output\reports\race-3-Weather-Test-Race-20260706-225303.md
+* Review the registration process to ensure all participants have completed payment.
+* Confirm the venue's ability to accommodate the expected number of participants.
+* Prepare contingency plans in case of unexpected weather conditions, although it appears unlikely.
+--------------------------------------------------
+✓ Sačuvano u: output\reports\race-3-Weather-Test-Race-20260706-234357.md
 ```
 
 Ovo potvrđuje da ceo lanac — baza → prognoza → strukturisan prompt → LLM → formatiran
