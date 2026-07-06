@@ -42,11 +42,13 @@ async def get_registration_by_participant_and_race(db: AsyncSession, participant
     return result.scalar_one_or_none()
     
 async def get_registration_count_by_race(db, race_id):
+    # A pending registration still reserves a spot (and a bib number) while payment
+    # is in progress, so it must count toward capacity/deletion checks just like a
+    # completed one. Only failed registrations release their spot.
     result = await db.execute(
         select(func.count()).where(
             and_(
                 Registration.race_id == race_id,
-                Registration.payment_status != PaymentStatusEnum.PENDING,
                 Registration.payment_status != PaymentStatusEnum.FAILED
             )
         )

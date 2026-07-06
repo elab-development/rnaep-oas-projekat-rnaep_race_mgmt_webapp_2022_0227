@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 from aiokafka import AIOKafkaConsumer
 from aiokafka.errors import KafkaConnectionError, GroupCoordinatorNotAvailableError
 from app.config import settings
@@ -8,6 +9,7 @@ from app.db.repositories import registration_repository, race_repository
 from app.enum import PaymentStatusEnum
 from app.services.email_service import send_registration_confirmed_email, send_registration_failed_email
 
+logger = logging.getLogger(__name__)
 
 consumer = None
 
@@ -16,30 +18,33 @@ async def start_consumer():
     consumer = AIOKafkaConsumer(
         "payment_completed",
         "payment_failed",
+        "payment_initiated",
         bootstrap_servers=settings.kafka_bootstrap_servers,
         group_id="race_service_group"
     )
 
     while True:
         try:
-            print("Race Service: Attempting to connect Consumer to Kafka...")
+            logger.info("Attempting to connect Consumer to Kafka...")
             await consumer.start()
-            print("Race Service: Consumer successfully connected to Kafka!")
+            logger.info("Consumer successfully connected to Kafka!")
             break
         except (KafkaConnectionError, GroupCoordinatorNotAvailableError) as e:
-            print(f"Race Service: Kafka not ready ({e}). Retrying in 3 seconds...")
+            logger.warning("Kafka not ready (%s). Retrying in 3 seconds...", e)
             await asyncio.sleep(3)
 
     async for msg in consumer:
         try:
             data = json.loads(msg.value.decode('utf-8'))
-            print(f"Race Service: Received message -> {data}")
+            logger.info("Received message -> %s", data)
             if msg.topic == "payment_completed":
                 await handle_payment_completed(data)
             elif msg.topic == "payment_failed":
                 await handle_payment_failed(data)
-        except Exception as e:
-            print(f"Race Service Consumer ERROR: {str(e)}")
+            elif msg.topic == "payment_initiated":
+                await handle_payment_initiated(data)
+        except Exception:
+            logger.error("Consumer error while processing message", exc_info=True)
 
 async def stop_consumer():
     global consumer
@@ -53,7 +58,7 @@ async def handle_payment_completed(data: dict):
             registration_id=data["registration_id"],
             status=PaymentStatusEnum.COMPLETED,
         )
-        print(f"Race Service: Registration {data['registration_id']} marked as COMPLETED")
+        logger.info("Registration %s marked as COMPLETED", data["registration_id"])
 
         if not registration:
             return
@@ -74,9 +79,9 @@ async def handle_payment_completed(data: dict):
                 bib_number=registration.bib_number,
             )
         else:
-            print(
-                f"Race Service: Preskoćeno slanje mejla za registraciju "
-                f"{data['registration_id']} – email nije prosleđen u Kafka poruci."
+            logger.info(
+                "Skipped confirmation email for registration %s - no participant email in Kafka message.",
+                data["registration_id"],
             )
 
 async def handle_payment_failed(data: dict):
@@ -86,7 +91,7 @@ async def handle_payment_failed(data: dict):
             registration_id=data["registration_id"],
             status=PaymentStatusEnum.FAILED,
         )
-        print(f"Race Service: Registration {data['registration_id']} marked as FAILED")
+        logger.info("Registration %s marked as FAILED", data["registration_id"])
 
         if not registration:
             return
@@ -104,7 +109,15 @@ async def handle_payment_failed(data: dict):
                 registration_id=registration.id,
             )
         else:
-            print(
-                f"Race Service: Preskoćeno slanje mejla za registraciju "
-                f"{data['registration_id']} – email nije prosleđen u Kafka poruci."
+            logger.info(
+                "Skipped failure email for registration %s - no participant email in Kafka message.",
+                data["registration_id"],
             )
+
+
+async def handle_payment_initiated(data: dict):
+    logger.info(
+        "Payment initiated for registration %s (amount=%s) - awaiting checkout completion.",
+        data.get("registration_id"),
+        data.get("amount"),
+    )

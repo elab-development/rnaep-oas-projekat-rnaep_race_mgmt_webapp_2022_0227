@@ -30,6 +30,15 @@ export function useRace(raceId: number) {
   });
 }
 
+export function useRaceWeather(raceId: number) {
+  return useQuery({
+    queryKey: [...raceKeys.detail(raceId), "weather"] as const,
+    queryFn: async () => (await raceApi.getWeather(raceId)).data,
+    enabled: raceId > 0,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 export function useCreateRace() {
   const queryClient = useQueryClient();
   return useMutation({

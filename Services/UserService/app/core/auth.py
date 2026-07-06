@@ -32,7 +32,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     )
     return encoded_jwt
 
-def verify_token(token: str) -> str | None:
+def verify_token(token: str) -> dict | None:
     try:
         payload = jwt.decode(
             token,
@@ -43,4 +43,4 @@ def verify_token(token: str) -> str | None:
     except jwt.InvalidTokenError:
         return None
     else:
-        return payload.get("sub")
+        return payload

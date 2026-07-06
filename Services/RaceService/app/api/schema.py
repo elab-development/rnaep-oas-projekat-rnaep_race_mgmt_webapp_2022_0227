@@ -82,3 +82,13 @@ class RaceUpdate(BaseModel):
     max_participants: int | None = None
     status: RaceStatusEnum | None = None
     price: float | None = None
+
+class WeatherForecast(BaseModel):
+    available: bool
+    reason: str | None = None
+    date: str | None = None
+    location: str | None = None
+    temperature_max_c: float | None = None
+    temperature_min_c: float | None = None
+    precipitation_probability_percent: int | None = None
+    weather_description: str | None = None

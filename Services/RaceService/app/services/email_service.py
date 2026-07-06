@@ -1,7 +1,10 @@
+import logging
 import mailtrap as mt
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pathlib import Path
 from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 _templates_dir = Path(__file__).parent.parent / "templates"
 _jinja_env = Environment(
@@ -33,10 +36,10 @@ async def _send_email(to_email: str, subject: str, html_body: str) -> bool:
             html=html_body,
         )
         client.send(mail)
-        print(f"[Email] Successfully sent to {to_email} | {subject}")
+        logger.info("Successfully sent email to %s | %s", to_email, subject)
         return True
-    except Exception as e:
-        print(f"[Email] Mailtrap error: {e}")
+    except Exception:
+        logger.error("Mailtrap error while sending to %s", to_email, exc_info=True)
         return False
 
 
