@@ -97,7 +97,7 @@ async def get_payments_by_user_id(db: AsyncSession, user_id: int) -> list[Paymen
 
 async def delete_payment_by_registration_id(db: AsyncSession, registration_id: int):
     await repository.delete_payment_by_registration_id(db, registration_id)
-
+#dkmasld
 
 async def handle_webhook(db: AsyncSession, payload: bytes, stripe_signature: str):
     try:
