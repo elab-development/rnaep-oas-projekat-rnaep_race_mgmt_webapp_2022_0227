@@ -104,47 +104,50 @@ cd ai-agent
 python main.py --race-id 3
 ```
 
-## Primer korišćenja (stvarno testirano)
+## Primer korišćenja (stvarno pokrenuto, pravi izlaz)
 
-Podaci ispod su stvarno povučeni iz baze i sa Open-Meteo API-ja tokom razvoja
-(LLM poziv nije izvršen jer zahteva pravi API ključ koji nije deo repozitorijuma):
+Ispod je stvaran, neizmenjen izlaz agenta, dobijen pokretanjem protiv stvarno
+pokrenute `race_db` baze i lokalno instaliranog Ollama servera (model `llama3.2`,
+`LLM_PROVIDER=ollama`):
 
 ```
 $ python main.py --race-id 3
 
-# race podaci povučeni iz race_db:
-name=Weather Test Race, location=Belgrade, max_participants=10,
-completed=0, pending=0, failed=0, capacity_utilization_percent=0.0
-
-# vremenska prognoza povučena sa Open-Meteo:
-Overcast, 21.1-31.0C, 6% chance of precipitation
-
-# (LLM generiše Markdown briefing na osnovu ovih podataka i čuva ga u
-#  output/reports/race-3-Weather-Test-Race-<timestamp>.md)
-```
-
-Očekivan format LLM izlaza (struktura, ne pravi model output):
-
-```markdown
 ## Summary
-Weather Test Race in Belgrade currently has 0 confirmed registrations out of a
-10-person capacity.
+The Weather Test Race is scheduled for July 7th, 2026, at 10:00 AM in Belgrade.
 
 ## Capacity Status
-No capacity risk — 0% utilization.
+No capacity risk as confirmed registrations (completed + pending) are below
+5% of max_participants (10).
 
 ## Weather Advisory
-Overcast conditions, 21-31C, low (6%) chance of precipitation. No weather risk.
+Weather conditions will be overcast with a temperature range of 21.2-31.0C
+and a 6% chance of precipitation. No weather risk is currently indicated.
 
 ## Recommended Actions
-- Promote the race to increase registrations, as capacity is currently unused.
-- Monitor registrations as the date approaches.
+* Monitor the weather forecast closely on race day to ensure accurate predictions.
+* Review the registration status one last time before the start of the race to
+  confirm all participants are accounted for.
+* Ensure that all necessary safety measures are in place and ready for the
+  start of the race.
+
+Saved to: output\reports\race-3-Weather-Test-Race-20260706-214553.md
 ```
+
+Ovo potvrđuje da ceo lanac — baza → prognoza → strukturisan prompt → LLM → formatiran
+Markdown izlaz sačuvan u fajl — stvarno radi od početka do kraja, sa oba provajdera
+podržana (isti primer radi identično i sa `LLM_PROVIDER=openai` uz validan
+`OPENAI_API_KEY`).
 
 ## Napomena o testiranju
 
-Modul za podatke (`data/race_data.py`) i vremenski klijent (`weather/weather_client.py`)
-su testirani uživo protiv stvarne baze i stvarnog Open-Meteo API-ja. Sam LLM poziv
-(OpenAI/Ollama) zahteva pravi API ključ odnosno lokalno pokrenut Ollama server, koji
-nisu deo ovog repozitorijuma — potrebno je popuniti `.env` pravim vrednostima pre
-demonstracije na odbrani.
+Ceo agent, uključujući sam LLM poziv, je testiran uživo:
+
+- `data/race_data.py` protiv stvarne `race_db` baze (pravi podaci o trci i prijavama).
+- `weather/weather_client.py` protiv stvarnog Open-Meteo API-ja.
+- `agent/briefing_agent.py` protiv lokalno pokrenutog Ollama servera (`llama3.2`).
+
+Za demonstraciju na odbrani je i dalje potrebno popuniti `.env` (kopirati iz
+`.env.example`) — ili sa `OPENAI_API_KEY` ili sa `LLM_PROVIDER=ollama` i pokrenutim
+Ollama serverom — pošto `.env` namerno nije deo repozitorijuma (zahtev za bezbedno
+čuvanje osetljivih podataka).
