@@ -19,7 +19,7 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8")
 
 from agent.briefing_agent import UnsupportedProviderError, generate_briefing
-from data.race_data import RaceNotFoundError, RaceSnapshot, fetch_race_snapshot_by_name
+from data.race_data import RaceNotFoundError, RaceSnapshot, fetch_race_snapshot_by_name, list_race_names
 from output.formatter import save_briefing
 from weather.weather_client import WeatherUnavailableError, get_forecast
 
@@ -46,7 +46,13 @@ def _prompt_for_race() -> RaceSnapshot:
         try:
             return fetch_race_snapshot_by_name(name)
         except RaceNotFoundError:
-            print(f"Trka '{name}' nije pronađena. Pokušajte ponovo.\n")
+            print(f"Trka '{name}' nije pronađena.")
+            existing = list_race_names()
+            if existing:
+                print("Postojeće trke:")
+                for existing_name in existing:
+                    print(f"  - {existing_name}")
+            print("Pokušajte ponovo.\n")
         except Exception as e:
             print(f"Error: could not reach the race database ({e})", file=sys.stderr)
             sys.exit(1)
