@@ -67,7 +67,7 @@ def _weather_summary_text(location: str, date_str: str) -> str:
 def _prompt_for_race() -> RaceSnapshot:
     """Repeatedly asks the user for a race name until an existing race is found."""
     while True:
-        name = input(f"{_Style.YELLOW}➤ Unesite naziv trke: {_Style.RESET}").strip()
+        name = input(f"{_Style.YELLOW}> Unesite naziv trke: {_Style.RESET}").strip()
         if not name:
             print(f"{_Style.RED}Naziv trke ne sme biti prazan. Pokušajte ponovo.{_Style.RESET}\n")
             continue
