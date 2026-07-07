@@ -1,7 +1,7 @@
 # ObstaRace Race Day Briefing Agent
 
 Jednostavan AI agent (Python + LangChain) razvijen za potrebe URIZ seminarskog rada
-(zahtev #16). Tema je direktno vezana za glavni projekat: agent generiše **"Race Day
+(domaci zadatak 3 - Razvoj AI Agenta). Agent generiše **"Race Day
 Briefing"** — kratak, strukturisan izveštaj za organizatora trke, na osnovu stvarnih
 podataka o trci i vremenskoj prognozi.
 
@@ -18,9 +18,6 @@ podataka o trci i vremenskoj prognozi.
 5. Model generiše Markdown izveštaj sa četiri sekcije: **Summary**, **Capacity
    Status**, **Weather Advisory**, **Recommended Actions**.
 6. Izveštaj se ispisuje u terminalu i čuva kao `.md` fajl.
-
-Terminalski interfejs je stilizovan (naslovni banner, kratak pozdrav agenta, obojeni
-prompt/status poruke) radi jasnije prezentacije uživo.
 
 ## Arhitektura / struktura projekta
 
